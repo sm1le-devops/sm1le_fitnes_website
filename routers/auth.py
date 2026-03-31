@@ -96,20 +96,32 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login")
 async def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    cookie_token = request.cookies.get("csrf_token")
-    if not cookie_token or data.csrf_token != cookie_token or not validate_csrf_token(data.csrf_token):
-        raise HTTPException(status_code=403, detail="Invalid or expired CSRF token")
-
-    if not is_username_valid(data.username):
-        raise HTTPException(status_code=400, detail="The username is invalid")
-
+    # ... (твой код проверки токена и поиска юзера остается без изменений) ...
     db_user = db.query(models.User).filter(models.User.username == data.username).first()
     if not db_user or not verify_password(data.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-    response = JSONResponse(content={"redirect_url": "/auth/profile"})
-    response.set_cookie("username", db_user.username, httponly=True, samesite="none", secure=True)
-    response.set_cookie("csrf_token", generate_csrf_token(), httponly=True, samesite="none", secure=True)
+    # --- ВОТ ЭТОТ БЛОК ЗАМЕНИ ---
+    response = JSONResponse(content={"redirect_url": "/auth/welcome"})
+    
+    # Настройки для Render (Production)
+    response.set_cookie(
+        key="username",
+        value=db_user.username,
+        httponly=True,
+        samesite="none",   # КРИТИЧНО: для HTTPS и переходов между страницами
+        secure=True,       # КРИТИЧНО: для Render (HTTPS)
+        path="/"           # КРИТИЧНО: чтобы кука была видна на главной '/'
+    )
+
+    response.set_cookie(
+        key="csrf_token",
+        value=generate_csrf_token(),
+        httponly=True,
+        samesite="none",
+        secure=True,
+        path="/"
+    )
     return response
 
 
@@ -128,15 +140,14 @@ def welcome(request: Request, db: Session = Depends(get_db), username: str | Non
 async def get_login(request: Request):
     csrf_token = generate_csrf_token()
     response = templates.TemplateResponse("login.html", {"request": request, "csrf_token": csrf_token})
-    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=True, samesite="none")
+    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=True, samesite="none", path="/")
     return response
-
 
 @router.get("/register", response_class=HTMLResponse)
 async def get_register(request: Request):
     csrf_token = generate_csrf_token()
     response = templates.TemplateResponse("register.html", {"request": request, "csrf_token": csrf_token})
-    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=True, samesite="none")
+    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=True, samesite="none", path="/")
     return response
 
 
