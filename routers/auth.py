@@ -108,8 +108,8 @@ async def login(data: LoginRequest, request: Request, db: Session = Depends(get_
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
     response = JSONResponse(content={"redirect_url": "/auth/welcome"})
-    response.set_cookie("username", db_user.username, httponly=True, samesite="none", secure=False)
-    response.set_cookie("csrf_token", generate_csrf_token(), httponly=True, samesite="none", secure=False)
+    response.set_cookie("username", db_user.username, httponly=True, samesite="none", secure=True)
+    response.set_cookie("csrf_token", generate_csrf_token(), httponly=True, samesite="none", secure=True)
     return response
 
 
@@ -128,7 +128,7 @@ def welcome(request: Request, db: Session = Depends(get_db), username: str | Non
 async def get_login(request: Request):
     csrf_token = generate_csrf_token()
     response = templates.TemplateResponse("login.html", {"request": request, "csrf_token": csrf_token})
-    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=False, samesite="none")
+    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=True, samesite="none")
     return response
 
 
@@ -136,7 +136,7 @@ async def get_login(request: Request):
 async def get_register(request: Request):
     csrf_token = generate_csrf_token()
     response = templates.TemplateResponse("register.html", {"request": request, "csrf_token": csrf_token})
-    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=False, samesite="none")
+    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=True, samesite="none")
     return response
 
 
@@ -179,7 +179,7 @@ def profile(
         "csrf_token",
         csrf_token,
         httponly=True,
-        secure=False,
+        secure=True,
         samesite="none"
     )
     return response
@@ -216,7 +216,7 @@ def profile(
         "csrf_token",
         csrf_token,
         httponly=True,
-        secure=False,
+        secure=True,
         samesite="none"
     )
     return response
@@ -314,7 +314,7 @@ async def update_profile(
             path="/",
             httponly=True,
             samesite="none",
-            secure=False
+            secure=True
         )
 
     return response
@@ -331,7 +331,7 @@ async def get_send_ad_form(request: Request):
         {"request": request, "csrf_token": csrf_token}
     )
     # Устанавливаем csrf_token в куки
-    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=False, samesite="lax")
+    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=True, samesite="lax")
     return response
 
 
