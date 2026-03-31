@@ -2,115 +2,214 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Top donators</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitLife - Твой план тренировок</title>
   <link rel="icon" type="image/png" href="/static/ava.png">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
+    :root {
+      --bg-dark: #121922;      /* Глубокий синий фон */
+      --card-bg: #1c2531;      /* Цвет карточек */
+      --accent: #f4743b;       /* Оранжевый акцент */
+      --text-main: #ffffff;
+      --text-gray: #a0aaba;
+    }
 
     body {
       margin: 0;
-      height: 100vh;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
-      /* Картинка как основной фон */
-      background: url("/static/GYMA.jpg");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-
+      padding: 0;
+      background-color: var(--bg-dark);
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-main);
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      color: white;
+      min-height: 100vh;
+    }
+
+    /* Верхняя панель (Приветствие) */
+    .header {
+      padding: 30px 20px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .greeting h1 {
+      font-size: 24px;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .greeting p {
+      color: var(--text-gray);
+      margin: 5px 0 0;
+      font-size: 14px;
+    }
+
+    .auth-buttons a {
+      text-decoration: none;
+      color: var(--text-main);
+      font-size: 14px;
+      background: var(--card-bg);
+      padding: 8px 15px;
+      border-radius: 10px;
+      margin-left: 10px;
+      border: 1px solid #344155;
+    }
+
+    /* Секция планов тренировок */
+    .content-section {
+      padding: 20px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    /* Карточки планов (как в макете) */
+    .workout-card {
+      background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url('/static/GYMA.jpg');
+      background-size: cover;
+      background-position: center;
+      height: 160px;
+      border-radius: 20px;
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 15px;
+      cursor: pointer;
+      transition: transform 0.2s;
       position: relative;
       overflow: hidden;
     }
 
-    /* Полупрозрачный градиент поверх картинки */
-    body::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(106, 17, 203, 0.9) 0%, rgba(142, 68, 173, 0.9) 100%);
-      z-index: -1;
+    .workout-card:active {
+      transform: scale(0.98);
     }
 
-    /* Верхний правый блок кнопок */
-    .top-right {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      display: flex;
-      gap: 15px;
+    .workout-card h3 {
+      margin: 0;
+      font-size: 18px;
     }
 
-    .top-right a {
-      padding: 10px 20px;
-      background: #9b59b6;
-      color: white;
-      text-decoration: none;
-      border-radius: 6px;
-      font-weight: 600;
-      transition: background 0.3s ease, box-shadow 0.3s ease;
-      box-shadow: 0 4px 10px rgba(155, 89, 182, 0.6);
-    }
-
-    .top-right a:hover {
-      background: #8e44ad;
-      box-shadow: 0 6px 14px rgba(142, 68, 173, 0.8);
-    }
-
-    /* Анимация появления */
-    @keyframes fadeSlideUp {
-      0% { opacity: 0; transform: translateY(50px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
-    h1.top-title {
-      font-family: 'Poppins', sans-serif;
-      font-size: 4rem;
-      margin-bottom: 4px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
-      text-transform: none;
-      text-align: center;
-      opacity: 0;
-      animation: fadeSlideUp 1.2s ease-out forwards;
-    }
-
-    p.subtitle {
-      font-size: 1.25rem;
+    .workout-card p {
+      margin: 5px 0 0;
+      font-size: 12px;
       color: #ddd;
-      margin-top: 0;
-      margin-bottom: 40px;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
-      max-width: 400px;
-      text-align: center;
-      font-weight: 500;
-      line-height: 1.2;
-      opacity: 0;
-      animation: fadeSlideUp 1.2s ease-out forwards;
-      animation-delay: 0.5s;
     }
 
-    #container {
-      background: rgba(0, 0, 0, 0.4);
-      padding: 40px 60px;
-      border-radius: 15px;
-      text-align: center;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      min-width: 320px;
+    .price-tag {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: var(--accent);
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 12px;
     }
+
+    /* Нижняя навигация */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #ffffff;
+      height: 70px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+    }
+
+    .nav-item {
+      text-decoration: none;
+      color: #8e99a7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 11px;
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 4px;
+      background: #eef1f4; /* Заглушка под иконку */
+      border-radius: 6px;
+    }
+
   </style>
 </head>
 <body>
-  <div class="top-right">
-    <a href="/auth/login">Log in</a>
-    <a href="/auth/register">Sign up</a>
-  </div>
 
-  <h1 class="top-title">Top donator$</h1>
-  <p class="subtitle">A fund for charitable donations and supporting those in need.</p>
+  <header class="header">
+    <div class="greeting">
+      <h1 id="user-name">Привет, Гость!</h1>
+      <p>Выбери свой путь к успеху</p>
+    </div>
+    <div class="auth-buttons" id="auth-zone">
+      <a href="/auth/login">Вход</a>
+    </div>
+  </header>
 
+  <main class="content-section">
+    <h2>Предлагаемые планы</h2>
+    
+    <div class="workout-card" onclick="selectPlan('weight_loss')">
+        <div class="price-tag">От 1500₽</div>
+        <h3>Интенсивное похудение</h3>
+        <p>4 недели • Жиросжигание • Для любого уровня</p>
+    </div>
+
+    <div class="workout-card" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url('/static/mass.jpg');" onclick="selectPlan('muscle_gain')">
+        <div class="price-tag">От 2000₽</div>
+        <h3>Набор мышечной массы</h3>
+        <p>8 недель • Силовые тренировки • Профи</p>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item active">
+      <div class="nav-icon"></div>
+      <span>Главная</span>
+    </a>
+    <a href="/workouts" class="nav-item">
+      <div class="nav-icon"></div>
+      <span>Тренировки</span>
+    </a>
+    <a href="/profile" class="nav-item">
+      <div class="nav-icon"></div>
+      <span>Профиль</span>
+    </a>
+  </nav>
+
+  <script>
+    // Простейшая проверка: залогинен ли пользователь (по наличию токена)
+    document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            document.getElementById('user-name').innerText = "Привет, Атлет!";
+            document.getElementById('auth-zone').style.display = 'none';
+        }
+    });
+
+    function selectPlan(planType) {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            alert("Чтобы выбрать план и подать заявку, нужно войти в аккаунт");
+            window.location.href = "/auth/login";
+        } else {
+            // Переход на страницу заявки с параметром пола/плана
+            window.location.href = `/application?plan=${planType}`;
+        }
+    }
+  </script>
 </body>
 </html>
