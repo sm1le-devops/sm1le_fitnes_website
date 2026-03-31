@@ -47,7 +47,7 @@
     
     .footer-text { text-align: center; margin-top: 20px; font-size: 14px; color: var(--text); }
     .footer-text a { color: var(--accent); text-decoration: none; font-weight: 600; }
-    #message { color: #ef4444; text-align: center; margin-bottom: 12px; font-size: 14px; min-height: 18px; }
+    #message { text-align: center; margin-bottom: 12px; font-size: 14px; min-height: 18px; }
   </style>
 </head>
 <body>
@@ -75,25 +75,48 @@
       Уже есть аккаунт? <a href="/auth/login">Войти</a>
     </div>
   </div>
+
   <script>
     document.getElementById('register-form').onsubmit = async (e) => {
       e.preventDefault();
       const msgEl = document.getElementById('message');
+      
+      // Сброс стиля сообщения
       msgEl.innerText = 'Регистрация...';
+      msgEl.style.color = 'var(--text-muted)';
+
+      // 1. Собираем данные из формы в объект
       const formData = new FormData(e.target);
+      const jsonData = Object.fromEntries(formData.entries());
+
       try {
-        const res = await fetch('/auth/register', { method: 'POST', body: formData });
+        // 2. Отправляем запрос как JSON
+        const res = await fetch('/auth/register', { 
+          method: 'POST', 
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(jsonData) 
+        });
+
         const data = await res.json();
+
         if (res.ok) {
           msgEl.style.color = '#22c55e';
           msgEl.innerText = 'Успех! Переходим ко входу...';
           setTimeout(() => window.location.href = '/auth/login', 1500);
         } else {
           msgEl.style.color = '#ef4444';
-          msgEl.innerText = data.detail || 'Ошибка регистрации';
+          // Если ошибка в формате FastAPI (массив detail), выводим первое сообщение
+          if (Array.isArray(data.detail)) {
+            msgEl.innerText = data.detail[0].msg;
+          } else {
+            msgEl.innerText = data.detail || 'Ошибка регистрации';
+          }
         }
       } catch (err) {
-        msgEl.innerText = 'Ошибка соединения';
+        msgEl.style.color = '#ef4444';
+        msgEl.innerText = 'Ошибка соединения с сервером';
       }
     };
   </script>

@@ -199,7 +199,7 @@
     // Выход
     document.getElementById('logout-btn').addEventListener('click', async () => {
       if(confirm('Вы уверены, что хотите выйти?')) {
-        await fetch('/auth/logout', { method: 'POST' });
+        await fetch('/auth/index', { method: 'POST' });
         location.href = '/';
       }
     });
