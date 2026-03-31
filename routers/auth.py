@@ -30,7 +30,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 load_dotenv()
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-YOUR_DOMAIN = os.getenv("YOUR_DOMAIN", "https://top-donators.onrender.com")
+YOUR_DOMAIN = os.getenv("YOUR_DOMAIN", "https://fitness-8d09.onrender.com")
 UPLOAD_AVATAR_DIR = "/static/avatars"
 MAX_AVATAR_SIZE = 10 * 1024 * 1024
 os.makedirs(UPLOAD_AVATAR_DIR, exist_ok=True)
