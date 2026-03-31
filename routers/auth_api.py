@@ -12,15 +12,18 @@ def check_auth(request: Request, db: Session = Depends(get_db)):
     cookie_username = request.cookies.get("username")
     cookie_token = request.cookies.get("csrf_token")
 
-    if not cookie_username or not cookie_token:
+    if not cookie_username:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     db_user = db.query(models.User).filter(models.User.username == cookie_username).first()
     if not db_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    # validate_csrf_token должна быть где-то импортирована
-    if not validate_csrf_token(cookie_token):
-        raise HTTPException(status_code=403, detail="Invalid or expired CSRF token")
-
-    return JSONResponse(content={"status": "ok", "user": {"username": db_user.username}})
+    # Возвращаем имя и аватарку, чтобы главная могла их отобразить
+    return JSONResponse(content={
+        "status": "ok", 
+        "user": {
+            "username": db_user.username,
+            "avatar": db_user.avatar  # Добавили это поле
+        }
+    })

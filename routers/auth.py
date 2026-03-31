@@ -149,40 +149,31 @@ async def donate(data: DonateRequest, request: Request, username: str | None = C
 
 
 @router.get("/profile", response_class=HTMLResponse)
-def profile(
-    request: Request,
-    db: Session = Depends(get_db),
-    username: str | None = Cookie(default=None)
-):
+async def get_profile_page(request: Request, db: Session = Depends(get_db)):
+    # 1. Проверяем авторизацию через куки
+    username = request.cookies.get("username")
+    
     if not username:
-        return RedirectResponse(url="/", status_code=303)
+        # Если нет куки — строго на логин
+        return RedirectResponse(url="/auth/login", status_code=303)
 
     user = db.query(models.User).filter(models.User.username == username).first()
+    
     if not user:
-        return RedirectResponse(url="/", status_code=303)
+        # Если кука есть, но юзера нет в базе — чистим куки и на логин
+        response = RedirectResponse(url="/auth/login", status_code=303)
+        response.delete_cookie("username")
+        return response
 
-    avatar_url = f"/static/avatars/{user.avatar}" if user.avatar else None
-    csrf_token = generate_csrf_token()
-
-    # Передаём csrf_token в шаблон (чтобы вставить в hidden input)
-    response = templates.TemplateResponse(
-        "profile.html",
-        {
-            "request": request,
-            "current_user": user,
-            "avatar_url": avatar_url,
-            "csrf_token": csrf_token
-        }
-    )
-    # Кладём CSRF в httponly-куку (невидимую для JS)
-    response.set_cookie(
-        "csrf_token",
-        csrf_token,
-        httponly=True,
-        secure=True,
-        samesite="none"
-    )
-    return response
+    # 2. Генерируем контекст для шаблона
+    avatar_url = f"/static/avatars/{user.avatar}" if user.avatar else "/static/default-avatar.png"
+    
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "current_user": user, # Передаем именно этот объект!
+        "avatar_url": avatar_url,
+        "csrf_token": request.cookies.get("csrf_token", "")
+    })
 
 
 @router.get("/profile", response_class=HTMLResponse)

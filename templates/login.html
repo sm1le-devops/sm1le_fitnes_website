@@ -1,190 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Login</title>
-  <link rel="icon" type="image/png" href="/static/ava.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Вход | sm1le.fitness</title>
   <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #6a11cb 0%, #8e44ad 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: white;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* SVG снизу */
-    .mountains {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 40%;
-      pointer-events: none;
-    }
-
-    /* SVG сверху */
-    .mountains-top {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 40%;   /* равна нижней */
-      transform: scaleY(-1); /* перевернуто */
-      pointer-events: none;
-    }
-
-    @keyframes fadeScale {
-      0% { opacity: 0; transform: scale(0.8); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-
-    #container {
-      background: rgba(0, 0, 0, 0.3);
-      padding: 30px 40px;
-      border-radius: 15px;
-      width: 320px;
-      box-sizing: border-box;
-      text-align: center;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      animation: fadeScale 0.8s ease-out forwards;
-      z-index: 2;
-    }
-
-    h2 {
-      font-size: 2rem;
-      margin-bottom: 20px;
-      opacity: 0;
-      transform: translateY(-20px);
-      animation: fadeScale 0.5s ease-out forwards;
-      animation-delay: 0.1s;
-    }
-
-    input, button, .link-button {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeScale 0.5s ease-out forwards;
-    }
-
-    input:nth-of-type(1) { animation-delay: 0.2s; }
-    input:nth-of-type(2) { animation-delay: 0.3s; }
-    button { margin-top: 15px; animation-delay: 0.4s; }
-    .link-button {
-      display: block;
-      margin-top: 15px;
-      color: white;
-      text-decoration: underline;
-      cursor: pointer;
-      transition: text-shadow 0.3s ease;
-      animation-delay: 0.5s;
-    }
-
-    .link-button:hover { text-shadow: 0 0 8px white; }
-
-    input {
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 6px;
-      border: none;
-      font-size: 16px;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 6px;
-      background: #9b59b6;
-      font-size: 18px;
-      color: white;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      box-shadow: 0 4px 10px rgba(155, 89, 182, 0.6);
-    }
-
-    button:hover {
-      background: #8e44ad;
-      box-shadow: 0 6px 14px rgba(142, 68, 173, 0.8);
-    }
-
-    #forgot-link { display: none; }
-
+    :root { --bg: #0F172A; --card-bg: #1E293B; --accent: #F97316; --text: #F8FAFC; --text-muted: #94A3B8; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; position: relative; }
     
+    /* Логотип СЛЕВА вверху */
+    .top-logo {
+      position: absolute; top: 20px; left: 20px;
+      text-decoration: none; color: var(--accent);
+      font-weight: 800; font-size: 18px; letter-spacing: -0.5px;
+      z-index: 10;
+    }
+
+    .auth-card { background: var(--card-bg); padding: 32px; border-radius: 24px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px rgba(0,0,0,0.3); margin: 16px; position: relative; z-index: 1; }
+    h2 { text-align: center; margin: 0 0 24px 0; font-size: 24px; }
+    input { width: 100%; padding: 14px; margin-bottom: 16px; border-radius: 12px; border: 1px solid #334155; background: #0F172A; color: white; outline: none; font-size: 16px; }
+    input:focus { border-color: var(--accent); }
+    .btn-auth { width: 100%; padding: 16px; border-radius: 14px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+    .btn-auth:active { transform: scale(0.98); }
+    
+    .footer-links { text-align: center; margin-top: 20px; font-size: 14px; color: var(--text); }
+    .footer-links a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    #message { color: #ef4444; text-align: center; margin-bottom: 10px; font-size: 14px; min-height: 18px; }
   </style>
 </head>
 <body>
-  <!-- Контур гор сверху -->
-  <svg class="mountains-top" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
-    <path d="M0 250 L150 100 L300 230 L450 120 L600 200 L750 90 L900 210 L1000 150 L1000 300 L0 300 Z" 
-          fill="none" stroke="white" stroke-width="2"/>
-  </svg>
-
-
-  <!-- Контур гор снизу -->
-  <svg class="mountains" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
-    <path d="M0 250 L150 100 L300 230 L450 120 L600 200 L750 90 L900 210 L1000 150 L1000 300 L0 300 Z" 
-          fill="none" stroke="white" stroke-width="2"/>
-  </svg>
-
-  <div id="container">
-    <h2>Login</h2>
-    <form id="login-form" novalidate>
-      <input type="text" id="username" name="username" placeholder="Username" required > 
-      <input type="password" id="password" name="password" placeholder="Password" required />
-      <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token }}">
-      <button type="submit">Log In</button>
+  <a href="/" class="top-logo">sm1le.fitness</a>
+  <div class="auth-card">
+    <h2>Вход</h2>
+    <div id="message"></div>
+    <form id="login-form">
+      <input type="text" name="username" placeholder="Логин" required>
+      <input type="password" name="password" placeholder="Пароль" required>
+      <button type="submit" class="btn-auth">Войти</button>
     </form>
-    <div id="message" style="margin-top: 10px;"></div>
-    <a href="/auth/register" class="link-button" id="register-link">No account? Register</a>
-    <a href="/auth/forgot-password" class="link-button" id="forgot-link">Forgot password?</a>
+    <div class="footer-links">
+      Нет аккаунта? <a href="/auth/register">Создать</a>
+    </div>
   </div>
-
-
   <script>
-    const form = document.getElementById('login-form');
-    const messageEl = document.getElementById('message');
-    const forgotLink = document.getElementById('forgot-link');
-
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('login-form').onsubmit = async (e) => {
       e.preventDefault();
-
-      const payload = {
-        username: form.username.value.trim(),
-        password: form.password.value.trim(),
-        csrf_token: form.csrf_token.value
-      };
-
-      try {
-        const res = await fetch('/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          credentials: 'include'
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          messageEl.textContent = '';
-          forgotLink.style.display = 'none';
-          window.location.href = data.redirect_url || '/auth/welcome';
-        } else {
-          messageEl.textContent = data.detail || 'Login error';
-          messageEl.style.color = 'red';
-          forgotLink.style.display = 'block';
-        }
-      } catch {
-        messageEl.textContent = 'Server connection error';
-        messageEl.style.color = 'red';
-        forgotLink.style.display = 'block';
-      }
-    });
+      const formData = new FormData(e.target);
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(Object.fromEntries(formData))
+      });
+      if (res.ok) window.location.href = '/auth/profile';
+      else document.getElementById('message').innerText = 'Ошибка входа';
+    };
   </script>
 </body>
 </html>

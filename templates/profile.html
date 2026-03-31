@@ -4,110 +4,60 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Мой Профиль | sm1le.fitness</title>
-  <link rel="icon" type="image/png" href="/static/ava.png">
   <style>
     :root {
-      --bg: #0F172A;          /* Глубокий синий фон */
-      --card-bg: #1E293B;     /* Фон карточек/инпутов */
-      --accent: #F97316;      /* Оранжевый акцент */
-      --text: #F8FAFC;
-      --text-muted: #94A3B8;
-      --error: #ef4444;
-      --success: #22c55e;
+      --bg: #0F172A; --card-bg: #1E293B; --accent: #F97316;
+      --text: #F8FAFC; --text-muted: #94A3B8; --error: #ef4444; --success: #22c55e;
     }
-
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
     body {
-      margin: 0; padding: 0;
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+      margin: 0; padding: 0; background-color: var(--bg); color: var(--text);
+      font-family: -apple-system, sans-serif; min-height: 100vh;
     }
-
-    /* Контейнер с отступом под нижний навбар */
-    .app-wrapper { padding: 20px 16px 100px 16px; flex: 1; }
-
-    /* Шапка Профиля */
-    .profile-header { text-align: center; margin-bottom: 25px; padding-top: 10px; }
-    .profile-header h1 { font-size: 24px; margin: 0; font-weight: 800; }
-    .profile-header p { color: var(--text-muted); margin: 4px 0 0; font-size: 14px; }
-
-    /* Аватар */
+    .app-wrapper { padding: 20px 16px 100px 16px; max-width: 500px; margin: 0 auto; }
+    .profile-header { text-align: center; margin-bottom: 25px; }
+    
     #avatar-wrapper {
-      position: relative; display: inline-block; cursor: pointer;
-      margin-bottom: 15px; width: 100px; height: 100px;
+      position: relative; display: inline-block; width: 100px; height: 100px;
+      margin-bottom: 15px; cursor: pointer;
     }
     img.avatar {
       width: 100px; height: 100px; border-radius: 50%;
       object-fit: cover; border: 3px solid var(--accent);
-      box-shadow: 0 4px 15px rgba(249, 115, 22, 0.2);
     }
     #avatar-overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      border-radius: 50%; background: rgba(0,0,0,0.5);
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0; transition: 0.3s ease;
+      position: absolute; inset: 0; background: rgba(0,0,0,0.4);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: 0.3s;
     }
     #avatar-wrapper:hover #avatar-overlay { opacity: 1; }
 
-    /* Форма */
     .form-section { margin-bottom: 20px; }
-    
-    label {
-      display: block; font-weight: 600; font-size: 13px;
-      color: var(--text-muted); margin-bottom: 6px; padding-left: 4px;
-    }
-    
+    label { display: block; font-size: 13px; color: var(--text-muted); margin: 10px 0 5px 4px; }
     input, select {
       width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #334155;
-      background: var(--card-bg); color: var(--text);
-      font-size: 15px; outline: none; box-sizing: border-box;
-      transition: border-color 0.3s;
+      background: var(--card-bg); color: white; font-size: 15px; outline: none;
     }
-    input:focus, select:focus { border-color: var(--accent); }
-    input::placeholder { color: #4f5e75; }
+    input:focus { border-color: var(--accent); }
+    .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    /* Сетка */
-    .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-
-    /* Сообщения */
-    #message {
-      margin: 10px 0; font-size: 13px; font-weight: 600;
-      min-height: 18px; text-align: center;
-    }
-
-    /* Кнопки */
-    .btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
-    
+    #message { text-align: center; margin: 10px 0; font-size: 14px; min-height: 20px; }
+    .btn-group { display: flex; flex-direction: column; gap: 12px; }
     button {
-      width: 100%; padding: 16px; border-radius: 14px; border: none;
-      font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.3s;
+      padding: 16px; border-radius: 14px; border: none; font-weight: 700;
+      font-size: 15px; cursor: pointer; transition: 0.3s;
     }
-    
-    .btn-save {
-      background: var(--accent); color: white;
-      box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3);
-    }
-    .btn-save:disabled { background: #334155; color: #64748b; box-shadow: none; cursor: not-allowed; }
+    .btn-save { background: var(--accent); color: white; }
+    .btn-save:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+    .btn-logout { background: #334155; color: white; }
 
-    .btn-logout { background: #334155; color: #f8fafc; }
-
-    /* Навбар */
     .nav-bar {
-      position: fixed; bottom: 0; left: 0; width: 100%; height: 75px;
-      background: #FFFFFF; display: flex; justify-content: space-around;
-      align-items: center; border-top-left-radius: 24px; border-top-right-radius: 24px;
-      box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 100;
+      position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
+      background: white; display: flex; justify-content: space-around; align-items: center;
+      border-top-left-radius: 20px; border-top-right-radius: 20px;
     }
-    .nav-item { text-decoration: none; color: #94A3B8; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 600; }
+    .nav-item { text-decoration: none; color: #94A3B8; font-size: 11px; text-align: center; }
     .nav-item.active { color: var(--accent); }
-    .nav-icon { width: 24px; height: 24px; background: #F1F5F9; border-radius: 8px; margin-bottom: 4px; }
-    .active .nav-icon { background: #FFEDD5; }
   </style>
 </head>
 <body>
@@ -115,149 +65,101 @@
   <div class="app-wrapper">
     <div class="profile-header">
       <div id="avatar-wrapper" onclick="document.getElementById('avatar').click()">
-        <img src="{{ avatar_url or '/static/default-avatar.png' }}" alt="Avatar" class="avatar" id="avatar-preview" />
-        <div id="avatar-overlay">
-          <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M12 17a5 5 0 100-10 5 5 0 000 10zm-6-9.9V7a1 1 0 011-1h1.2l.6-1.2A1 1 0 0110.6 4h2.8a1 1 0 01.9.6L15 6h1.2a1 1 0 011 1v.1M4 8h16v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/></svg>
-        </div>
+        <img src="{{ avatar_url if avatar_url else '/static/default-avatar.png' }}" class="avatar" id="avatar-preview">
+        <div id="avatar-overlay">📸</div>
       </div>
-      <h1 id="display-username">{{ current_user.username }}</h1>
-      <p>Твой личный фитнес-профиль</p>
+      <h1 id="display-username">{{ current_user.username if current_user else 'Профиль' }}</h1>
     </div>
 
     <form id="profile-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token if csrf_token else '' }}">
       
       <div class="form-section">
         <label>Имя пользователя</label>
-        <input type="text" id="username" name="username" value="{{ current_user.username }}" required />
+        <input type="text" id="username" name="username" value="{{ current_user.username if current_user else '' }}" required>
         
         <label>Email</label>
-        <input type="email" id="email" name="email" value="{{ current_user.email }}" required />
+        <input type="email" id="email" name="email" value="{{ current_user.email if current_user else '' }}" required>
         
         <label>Новый пароль</label>
-        <input type="password" id="password" name="password" placeholder="Оставьте пустым для сохранения" />
+        <input type="password" id="password" name="password" placeholder="Оставьте пустым, чтобы не менять">
       </div>
 
-      <div class="form-section">
-        <div class="grid-inputs">
-          <div><label>Вес (кг)</label><input type="number" step="0.1" id="weight" name="weight" value="{{ current_user.weight or '' }}" /></div>
-          <div><label>Рост (см)</label><input type="number" id="height" name="height" value="{{ current_user.height or '' }}" /></div>
+      <div class="grid-inputs">
+        <div>
+          <label>Вес (кг)</label>
+          <input type="number" step="0.1" id="weight" name="weight" value="{{ current_user.weight if current_user and current_user.weight else '' }}">
         </div>
-        <div class="grid-inputs">
-          <div><label>Возраст</label><input type="number" id="age" name="age" value="{{ current_user.age or '' }}" /></div>
-          <div>
-            <label>Пол</label>
-            <select id="gender" name="gender">
-              <option value="">Не выбран</option>
-              <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>Мужской</option>
-              <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>Женский</option>
-            </select>
-          </div>
+        <div>
+          <label>Рост (см)</label>
+          <input type="number" id="height" name="height" value="{{ current_user.height if current_user and current_user.height else '' }}">
         </div>
       </div>
 
-      <input type="file" id="avatar" name="avatar" accept="image/*" style="display:none;" />
-      
+      <input type="file" id="avatar" name="avatar" accept="image/*" style="display:none;">
       <div id="message"></div>
 
       <div class="btn-group">
-        <button type="submit" class="btn-save" id="save-button" disabled>Сохранить изменения</button>
-        <button type="button" class="btn-logout" id="logout-btn">Выйти из аккаунта</button>
+        <button type="submit" class="btn-save" id="save-button" disabled>Сохранить</button>
+        <button type="button" class="btn-logout" id="logout-btn">Выйти</button>
       </div>
     </form>
   </div>
 
   <nav class="nav-bar">
-    <a href="/" class="nav-item"><div class="nav-icon"></div><span>Главная</span></a>
-    <a href="/workouts" class="nav-item"><div class="nav-icon"></div><span>Планы</span></a>
-    <a href="/auth/profile" class="nav-item active"><div class="nav-icon"></div><span>Профиль</span></a>
+    <a href="/" class="nav-item"><span>Главная</span></a>
+    <a href="/workouts" class="nav-item"><span>Планы</span></a>
+    <a href="/auth/profile" class="nav-item active"><span>Профиль</span></a>
   </nav>
 
   <script>
     const form = document.getElementById('profile-form');
-    const message = document.getElementById('message');
-    const avatarInput = document.getElementById('avatar');
-    const avatarPreview = document.getElementById('avatar-preview');
     const saveButton = document.getElementById('save-button');
-    const displayUsername = document.getElementById('display-username');
+    const avatarInput = document.getElementById('avatar');
 
-    const initialData = {
-      username: document.getElementById('username').value,
-      email: document.getElementById('email').value,
-      weight: document.getElementById('weight').value,
-      height: document.getElementById('height').value,
-      age: document.getElementById('age').value,
-      gender: document.getElementById('gender').value
-    };
-
-    function containsCyrillic(str) { return /[а-яё]/i.test(str); }
-
-    function checkChanges() {
-      const username = document.getElementById('username').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      
-      // Живое обновление имени в заголовке
-      displayUsername.textContent = username || initialData.username;
-
-      let hasError = false;
-      if (containsCyrillic(username) || containsCyrillic(email) || containsCyrillic(password)) {
-        message.textContent = 'Кириллица запрещена в полях логина/пароля/email';
-        message.style.color = 'var(--error)';
-        hasError = true;
-      } else {
-        message.textContent = '';
-      }
-
-      let changed = avatarInput.files.length > 0 || password.length > 0;
-      for (const id in initialData) {
-        if (document.getElementById(id).value !== initialData[id]) { changed = true; break; }
-      }
-      saveButton.disabled = !changed || hasError;
-    }
-
-    form.querySelectorAll('input, select').forEach(el => el.addEventListener('input', checkChanges));
-
-    avatarInput.addEventListener('change', () => {
-      const file = avatarInput.files[0];
-      if (file) avatarPreview.src = URL.createObjectURL(file);
-      checkChanges();
+    // Следим за изменениями
+    form.addEventListener('input', () => {
+      saveButton.disabled = false;
     });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      saveButton.disabled = true;
-      message.textContent = 'Сохранение...';
-      message.style.color = 'var(--text)';
-
-      const formData = new FormData(form);
-
-      try {
-        const res = await fetch('/auth/profile', {
-          method: 'POST',
-          credentials: 'include',
-          body: formData
-        });
-        
-        if (res.ok) {
-          message.textContent = 'Готово! Возвращаемся на главную...';
-          message.style.color = 'var(--success)';
-          // Перекидываем на главную, чтобы обновилась аватарка в шапке
-          setTimeout(() => { window.location.href = '/'; }, 1000);
-        } else {
-          const data = await res.json();
-          throw new Error(data.detail || 'Ошибка сервера');
-        }
-      } catch (err) {
-        message.textContent = err.message;
-        message.style.color = 'var(--error)';
+    // Превью аватара
+    avatarInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        document.getElementById('avatar-preview').src = URL.createObjectURL(file);
         saveButton.disabled = false;
       }
     });
 
+    // Отправка формы
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('message');
+      msg.textContent = 'Сохранение...';
+      
+      const formData = new FormData(form);
+      try {
+        const res = await fetch('/auth/profile', {
+          method: 'POST',
+          body: formData
+        });
+        if (res.ok) {
+          msg.textContent = 'Успешно обновлено!';
+          msg.style.color = 'var(--success)';
+          setTimeout(() => location.href = '/', 1000);
+        } else {
+          msg.textContent = 'Ошибка при сохранении';
+          msg.style.color = 'var(--error)';
+        }
+      } catch (err) {
+        msg.textContent = 'Ошибка сети';
+      }
+    });
+
+    // Выход
     document.getElementById('logout-btn').addEventListener('click', async () => {
-      await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
-      window.location.href = '/';
+      await fetch('/auth/logout', { method: 'POST' });
+      location.href = '/';
     });
   </script>
 </body>

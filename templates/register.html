@@ -1,224 +1,77 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<title>Registration</title>
-<link rel="icon" type="image/png" href="/static/ava.png">
-<style>
-body {
-  margin: 0;
-  height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #6a11cb 0%, #8e44ad 100%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  position: relative;
-  overflow: hidden;
-}
-
-.mountains-top {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 20%;
-      transform: scaleY(-1);
-      pointer-events: none;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Регистрация | sm1le.fitness</title>
+  <style>
+    :root { --bg: #0F172A; --card-bg: #1E293B; --accent: #F97316; --text: #F8FAFC; --text-muted: #94A3B8; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; position: relative; }
+    
+    /* Логотип СЛЕВА вверху */
+    .top-logo {
+      position: absolute; top: 20px; left: 20px;
+      text-decoration: none; color: var(--accent);
+      font-weight: 800; font-size: 18px; letter-spacing: -0.5px;
+      z-index: 10;
     }
 
-    /* Линия снизу */
-    .mountains-bottom {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 40%;
-      pointer-events: none;
-    }
-
-/* Анимация появления */
-@keyframes fadeScale {
-  0% { opacity: 0; transform: scale(0.8); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-#container {
-  background: rgba(0, 0, 0, 0.4);
-  padding: 30px 40px;
-  border-radius: 15px;
-  width: 320px;
-  box-sizing: border-box;
-  text-align: center;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
-  animation: fadeScale 0.8s ease-out forwards;
-  z-index: 2;
-}
-
-h2 {
-  font-size: 2rem;
-  margin-bottom: 30px;
-}
-
-input, button {
-  width: 100%;
-  margin: 10px 0;
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-  font-size: 16px;
-}
-
-button {
-  background: #9b59b6;
-  color: white;
-  cursor: pointer;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 4px 10px rgba(155, 89, 182, 0.6);
-}
-
-button:hover:enabled {
-  background: #8e44ad;
-  box-shadow: 0 6px 14px rgba(142, 68, 173, 0.8);
-}
-
-button:disabled {
-  background: #555;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-#message {
-  margin-top: 10px;
-  font-weight: bold;
-  min-height: 20px;
-}
-
-.link-button {
-  display: block;
-  margin-top: 15px;
-  color: white;
-  text-decoration: underline;
-  cursor: pointer;
-  transition: text-shadow 0.3s ease;
-}
-
-.link-button:hover {
-  text-shadow: 0 0 8px white;
-}
-</style>
+    .auth-card { background: var(--card-bg); padding: 32px; border-radius: 24px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px rgba(0,0,0,0.3); margin: 16px; position: relative; z-index: 1; }
+    h2 { text-align: center; margin: 0; font-size: 24px; }
+    p.subtitle { color: var(--text-muted); text-align: center; margin-bottom: 24px; font-size: 14px; }
+    
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; margin-left: 4px; }
+    input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #334155; background: #0F172A; color: white; outline: none; font-size: 16px; }
+    input:focus { border-color: var(--accent); }
+    
+    .btn-register { width: 100%; padding: 16px; border-radius: 14px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; }
+    
+    .footer-text { text-align: center; margin-top: 20px; font-size: 14px; color: var(--text); }
+    .footer-text a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    #message { color: #ef4444; text-align: center; margin-bottom: 12px; font-size: 14px; min-height: 18px; }
+  </style>
 </head>
 <body>
-
-  <!-- Линия сверху -->
-  <svg class="mountains-top" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
-    <path d="M0 250 L150 100 L300 230 L450 120 L600 200 L750 90 L900 210 L1000 150 L1000 300 L0 300 Z" 
-          fill="none" stroke="white" stroke-width="2"/>
-  </svg>
-
-  <!-- Линия снизу -->
-  <svg class="mountains-bottom" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
-    <path d="M0 250 L150 100 L300 230 L450 120 L600 200 L750 90 L900 210 L1000 150 L1000 300 L0 300 Z" 
-          fill="none" stroke="white" stroke-width="2"/>
-  </svg>
-
-<div id="container">
-  <h2>Registration</h2>
-  <form id="register-form" novalidate>
-    <input type="text" id="username" name="username" placeholder="Username" required />
-    <input type="email" id="email" name="email" placeholder="Email" required />
-    <input type="password" id="password" name="password" placeholder="Password" required />
-    <button type="submit" id="register-btn" disabled>Sign up</button>
-  </form>
-  <p id="message"></p>
-  <a href="/auth/login" class="link-button" id="login-link">Already have an account? Log in</a>
-</div>
-
-<script>
-const form = document.getElementById('register-form');
-const message = document.getElementById('message');
-const registerBtn = document.getElementById('register-btn');
-
-function containsCyrillic(text) {
-  return /[А-Яа-яЁё]/.test(text);
-}
-
-function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  if (containsCyrillic(email)) return "Email must not contain Cyrillic letters";
-  if (!emailRegex.test(email)) return "Enter a valid email";
-  return "";
-}
-
-function validatePassword(password) {
-  if (password.length < 8) return "Password must be at least 8 characters long";
-  if (!/[a-z]/.test(password)) return "Add at least one lowercase letter";
-  if (!/[0-9]/.test(password)) return "Add at least one number";
-  if (containsCyrillic(password)) return "Password must not contain Cyrillic letters";
-  return "";
-}
-
-function validateForm() {
-  const username = form.username.value.trim();
-  const email = form.email.value.trim();
-  const password = form.password.value.trim();
-
-  let error = "";
-
-  if (!username) {
-    error = "Enter username";
-  } else if (containsCyrillic(username)) {
-    error = "Username must not contain Cyrillic letters";
-  } else if (!email) {
-    error = "Enter email";
-  } else {
-    error = validateEmail(email) || validatePassword(password);
-  }
-
-  message.textContent = error;
-  message.style.color = error ? "red" : "lightgreen";
-  registerBtn.disabled = !!error;
-  return !error;
-}
-
-form.username.addEventListener("input", validateForm);
-form.email.addEventListener("input", validateForm);
-form.password.addEventListener("input", validateForm);
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
-
-  const payload = {
-    username: form.username.value.trim(),
-    email: form.email.value.trim(),
-    password: form.password.value.trim()
-  };
-
-  try {
-    const res = await fetch('/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      credentials: 'include'
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      message.textContent = data.message || 'Successfully registered!';
-      message.style.color = 'lightgreen';
-      setTimeout(() => window.location.href = "/auth/login", 1500);
-    } else {
-      message.textContent = data.detail || 'Registration error';
-      message.style.color = 'red';
-    }
-  } catch {
-    message.textContent = 'Server connection error';
-    message.style.color = 'red';
-  }
-});
-</script>
-
+  <a href="/" class="top-logo">sm1le.fitness</a>
+  <div class="auth-card">
+    <h2>Создать аккаунт</h2>
+    <p class="subtitle">Начни свой путь к идеальному телу</p>
+    <div id="message"></div>
+    <form id="register-form">
+      <div class="form-group">
+        <label>Логин</label>
+        <input type="text" name="username" placeholder="Придумайте логин" required>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="example@mail.com" required>
+      </div>
+      <div class="form-group">
+        <label>Пароль</label>
+        <input type="password" name="password" placeholder="Минимум 6 символов" required>
+      </div>
+      <button type="submit" class="btn-register">Зарегистрироваться</button>
+    </form>
+    <div class="footer-text">
+      Уже есть аккаунт? <a href="/auth/login">Войти</a>
+    </div>
+  </div>
+  <script>
+    document.getElementById('register-form').onsubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const res = await fetch('/auth/register', {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) window.location.href = '/auth/login';
+      else {
+        const data = await res.json();
+        document.getElementById('message').innerText = data.detail || 'Ошибка регистрации';
+      }
+    };
+  </script>
 </body>
 </html>
