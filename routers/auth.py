@@ -150,30 +150,43 @@ async def donate(data: DonateRequest, request: Request, username: str | None = C
 
 @router.get("/profile", response_class=HTMLResponse)
 async def get_profile_page(request: Request, db: Session = Depends(get_db)):
-    # 1. Проверяем авторизацию через куки
+    # 1. Извлекаем имя пользователя из куки
     username = request.cookies.get("username")
     
+    # 2. Если куки нет — перенаправляем на логин
     if not username:
-        # Если нет куки — строго на логин
         return RedirectResponse(url="/auth/login", status_code=303)
 
+    # 3. Ищем пользователя в базе данных
     user = db.query(models.User).filter(models.User.username == username).first()
     
+    # 4. Если кука есть, но пользователя в базе нет (например, удален)
     if not user:
-        # Если кука есть, но юзера нет в базе — чистим куки и на логин
         response = RedirectResponse(url="/auth/login", status_code=303)
-        response.delete_cookie("username")
+        response.delete_cookie("username") # Чистим невалидную куку
         return response
 
-    # 2. Генерируем контекст для шаблона
+    # 5. Генерируем новый CSRF токен для безопасности форм
+    csrf_token = generate_csrf_token()
     avatar_url = f"/static/avatars/{user.avatar}" if user.avatar else "/static/default-avatar.png"
     
-    return templates.TemplateResponse("profile.html", {
+    # 6. Отдаем страницу с данными пользователя
+    response = templates.TemplateResponse("profile.html", {
         "request": request,
-        "current_user": user, # Передаем именно этот объект!
+        "current_user": user,
         "avatar_url": avatar_url,
-        "csrf_token": request.cookies.get("csrf_token", "")
+        "csrf_token": csrf_token
     })
+    
+    # Обновляем CSRF токен в куках
+    response.set_cookie(
+        "csrf_token", 
+        csrf_token, 
+        httponly=True, 
+        secure=True, 
+        samesite="none"
+    )
+    return response
 
 
 @router.get("/profile", response_class=HTMLResponse)
