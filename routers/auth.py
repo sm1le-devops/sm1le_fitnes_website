@@ -202,93 +202,72 @@ async def update_profile(
     username: Optional[str] = Form(None),
     email: Optional[str] = Form(None),
     password: Optional[str] = Form(None),
-    avatar: Optional[UploadFile] = File(None),
+    weight: Optional[float] = Form(None),
+    height: Optional[float] = Form(None),
     db: Session = Depends(get_db),
     current_username: str = Cookie(..., alias="username")
 ):
-    form = await request.form()
-    csrf_token_form = form.get("csrf_token")
+    # 1. Проверка CSRF
+    form_data = await request.form()
+    csrf_token_form = form_data.get("csrf_token")
     csrf_token_cookie = request.cookies.get("csrf_token")
 
-    # Проверка CSRF
     if not csrf_token_form or not csrf_token_cookie:
-        raise HTTPException(status_code=403, detail="CSRF token missing")
+        raise HTTPException(status_code=403, detail="CSRF токен отсутствует")
+    
     if csrf_token_form != csrf_token_cookie:
-        raise HTTPException(status_code=403, detail="Invalid CSRF token")
+        raise HTTPException(status_code=403, detail="Неверный CSRF токен")
+
     if not validate_csrf_token(csrf_token_form):
-        raise HTTPException(status_code=403, detail="Expired or invalid CSRF token")
+        raise HTTPException(status_code=403, detail="Токен истек или недействителен")
 
-    if not current_username:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
+    # 2. Поиск пользователя в БД
     user = db.query(models.User).filter(models.User.username == current_username).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-    # --- обновления ---
+    # 3. Обновление текстовых данных
+    # Проверка уникальности нового имени, если оно меняется
     if username and username != current_username:
         if db.query(models.User).filter(models.User.username == username).first():
-            raise HTTPException(status_code=400, detail="Username is already taken")
+            raise HTTPException(status_code=400, detail="Это имя пользователя уже занято")
         user.username = username
 
+    # Проверка уникальности email
     if email and email != user.email:
         if db.query(models.User).filter(models.User.email == email).first():
-            raise HTTPException(status_code=400, detail="Email is already in use")
+            raise HTTPException(status_code=400, detail="Этот Email уже используется")
         user.email = email
 
-    if password:
+    # Хеширование нового пароля
+    if password and password.strip():
         user.hashed_password = get_password_hash(password)
 
-    # --- аватар ---
-    if avatar and avatar.filename:
-        contents = await avatar.read()
-        if len(contents) > MAX_AVATAR_SIZE:
-            raise HTTPException(status_code=413, detail="The file size is too large (maximum 10 MB)")
+    # Обновление веса и роста (теперь типы совпадают с Float в модели)
+    if weight is not None:
+        user.weight = weight
+    if height is not None:
+        user.height = height
 
-        from PIL import Image
-        from io import BytesIO
+    # Применяем изменения в БД
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Ошибка при сохранении в базу данных")
 
-        try:
-            img = Image.open(BytesIO(contents))
-            img.verify()
-        except Exception:
-            raise HTTPException(status_code=400, detail="The file is not an image")
+    response = JSONResponse(content={"message": "Профиль успешно обновлен"})
 
-        safe_filename = os.path.basename(avatar.filename)
-        ext = os.path.splitext(safe_filename)[1].lower()
-        ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg"}
-        if ext not in ALLOWED_EXTENSIONS:
-            raise HTTPException(status_code=400, detail="Unsupported file extension")
-
-        avatar_filename = f"user_{user.id}_{int(time.time())}{ext}"
-        avatar_path = os.path.join(UPLOAD_AVATAR_DIR, avatar_filename)
-
-        if user.avatar:
-            old_avatar_path = os.path.join(UPLOAD_AVATAR_DIR, user.avatar)
-            if os.path.exists(old_avatar_path):
-                try:
-                    os.remove(old_avatar_path)
-                except Exception as e:
-                    print(f"Error deleting old avatar: {e}")
-
-        with open(avatar_path, "wb") as buffer:
-            buffer.write(contents)
-
-        user.avatar = avatar_filename
-
-    db.commit()
-
-    response = JSONResponse(content={"message": "Profile updated successfully"})
-
-    # если юзер сменил username → обновляем cookie
+    # 4. Обновляем куку, если сменился username
     if username and username != current_username:
         response.set_cookie(
             key="username",
             value=username,
             path="/",
             httponly=True,
-            samesite="none",
-            secure=True
+            samesite="lax",
+            secure=True,
+            max_age=86400
         )
 
     return response
