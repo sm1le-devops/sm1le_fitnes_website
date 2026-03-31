@@ -101,40 +101,42 @@ async def login(data: LoginRequest, request: Request, db: Session = Depends(get_
     if not db_user or not verify_password(data.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-    # --- ВОТ ЭТОТ БЛОК ЗАМЕНИ ---
-    response = JSONResponse(content={"redirect_url": "/auth/profile"})
+    response = JSONResponse(content={"redirect_url": "/auth/welcome"})
     
-    # Настройки для Render (Production)
+    # Мы передаем username пользователя, чтобы сайт его помнил
     response.set_cookie(
-        key="username",
-        value=db_user.username,
-        httponly=True,
-        samesite="none",   
-        secure=True,       
-        path="/"           
+        key="username", 
+        value=db_user.username, # Передаем имя из базы
+        httponly=True, 
+        secure=True, 
+        samesite="lax", 
+        path="/",              # КРИТИЧНО: кука будет работать на всем сайте
+        max_age=86400          # Кука живет 24 часа
     )
 
     response.set_cookie(
-        key="csrf_token",
-        value=generate_csrf_token(),
-        httponly=True,
-        samesite="none",
-        secure=True,
+        key="csrf_token", 
+        value=generate_csrf_token(), 
+        httponly=True, 
+        secure=True, 
+        samesite="lax", 
         path="/"
     )
     return response
 
 
 @router.get("/welcome", response_class=HTMLResponse)
-def welcome(request: Request, db: Session = Depends(get_db), username: str | None = Cookie(default=None), donation: str | None = Query(default=None)):
-    # Если куки нет — на регистрацию
+def welcome(request: Request, db: Session = Depends(get_db), username: str | None = Cookie(default=None)):
+    # 1. Проверка авторизации
     if not username:
         return RedirectResponse(url="/auth/register", status_code=303)
     
-    users = db.query(models.User).order_by(models.User.amount.desc()).limit(10).all()
+    # 2. Просто берем список пользователей (без сортировки по деньгам)
+    users = db.query(models.User).limit(10).all()
+    
     current_user = db.query(models.User).filter(models.User.username == username).first()
     
-    # Если кука есть, но юзер удален из базы
+    # 3. Если кука есть, а юзера нет
     if not current_user:
         response = RedirectResponse(url="/auth/register", status_code=303)
         response.delete_cookie("username", path="/")
@@ -143,8 +145,7 @@ def welcome(request: Request, db: Session = Depends(get_db), username: str | Non
     return templates.TemplateResponse("welcome.html", {
         "request": request, 
         "top_users": users, 
-        "current_user": current_user, 
-        "donation": donation
+        "current_user": current_user
     })
 
 @router.get("/login", response_class=HTMLResponse)

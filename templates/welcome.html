@@ -2,100 +2,199 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Top Donators</title>
-  <link rel="icon" type="image/png" href="/static/ava.png">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/welcome.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Планы тренировок | sm1le.fitness</title>
+  <style>
+    :root {
+      --bg: #0F172A;
+      --card-bg: #1E293B;
+      --accent: #F97316;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --success: #22C55E;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .app-wrapper {
+      padding: 20px 16px 120px 16px;
+      max-width: 500px;
+      margin: 0 auto;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Шапка — Чистый оранжевый */
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      font-size: 28px;
+      margin: 0;
+      color: var(--accent);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      color: var(--text-muted);
+      margin-top: 8px;
+      font-size: 16px;
+    }
+
+    /* Карточки планов */
+    .plan-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+    .plan-card:active { transform: scale(0.98); }
+
+    .plan-badge {
+      position: absolute;
+      top: 12px;
+      right: -30px;
+      background: var(--accent);
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 4px 40px;
+      transform: rotate(45deg);
+      box-shadow: 0 2px 10px rgba(249, 115, 22, 0.3);
+    }
+
+    .plan-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .plan-desc {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 15px;
+    }
+
+    .btn-select {
+      background: rgba(249, 115, 22, 0.1);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 12px 0;
+      width: 100%;
+      border-radius: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    /* НИЖНЕЕ МЕНЮ */
+    .bottom-nav {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 40px);
+      max-width: 400px;
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(12px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 12px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 1000;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .nav-item {
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 11px;
+      transition: 0.3s;
+    }
+    
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item svg {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 4px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* Оранжевая залитая иконка для активного пункта */
+    .nav-item.active svg {
+      fill: var(--accent);
+      filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.4));
+    }
+  </style>
 </head>
 <body>
 
-  {% if donation == "success" %}
-  <div id="donate-success-message">
-    🎉 Thank you for your donation! 🎉
-  </div>
-  <canvas id="fireworks"></canvas>
-  {% endif %}
+  <div class="app-wrapper">
+    <div class="header">
+      <h1>Выбери план</h1>
+      <p>Привет, {{ current_user.username }}! Начнем тренировку?</p>
+    </div>
 
-  <div class="container">
-    <h1>Top Donators</h1>
-    <table>
-      <thead>
-        <tr>
-          <th>Username</th>
-          <th>Donation Amount</th>
-          <th>Last Donation</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for user in top_users %}
-        <tr>
-          <td>
-            {% set rank = loop.index %}
-            {% if rank <= 3 %}
-              <span class="rank">{{ rank }}</span>
-            {% else %}
-              <span class="rank-normal">{{ rank }}</span>
-            {% endif %}
-            <img class="avatar-small"
-                 src="{{ url_for('static', path='avatars/' + user.avatar) if user.avatar else url_for('static', path='default-avatar.png') }}"
-                 alt="Avatar" />
-            {{ user.username }}
-            <span class="philanthrop-level" tabindex="0">
-              {{ user.philanthrop_level }}
-              <span class="tooltip">
-                <div class="tooltip-title">Philanthropist Level {{ user.philanthrop_level }}</div><br />
-                • F1 — from €50<br />
-                • F2 — from €90<br />
-                • F3 — from €150<br />
-                • F4 — from €250<br />
-                • F5 — from €350 and above<br />
-                • Elite — from €850
-              </span>
-            </span>
-          </td>
-          <td>{{ user.amount }}</td>
-          <td>{% if user.last_donation_time %}{{ user.last_donation_time.strftime("%Y-%m-%d %H:%M") }}{% else %}—{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="plan-card">
+      <div class="plan-badge">NEW</div>
+      <span class="plan-title">Быстрый старт</span>
+      <p class="plan-desc">Идеально для новичков. Базовые упражнения и основы питания на 4 недели.</p>
+      <button class="btn-select">Подробнее</button>
+    </div>
 
-    <h2>Make a Donation to the Fund</h2>
-    <form id="donate-form" method="POST" action="/auth/payment">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token|default('') }}" />
-      <input type="number" name="amount" id="donate-amount" placeholder="Donation Amount" min="1" required />
-      <button type="submit">Donate</button>
-    </form>
-  </div>
-  
-  <div class="ads-section-wrapper">
-    <h2 class="ads-section-title">Project Support</h2>
-    <div id="ads-section" class="ads-container"></div>
-    
-  </div>
+    <div class="plan-card">
+      <span class="plan-title">Максимум силы</span>
+      <p class="plan-desc">Программа для тех, кто хочет увеличить веса в базе. Тяжелый тренинг.</p>
+      <button class="btn-select">Подробнее</button>
+    </div>
 
-  <div class="profile-top-right">
-    <img src="{{ url_for('static', path='avatars/' + current_user.avatar) if current_user.avatar else url_for('static', path='default-avatar.png') }}" class="avatar-large" />
-    <a href="/auth/profile">Profile</a>
-  </div>
-
-  <div class="center-buttons">
-    <a href="/auth/send_ad" class="button-style">“Request Help” Section</a>
-    <button id="infoBtn" class="button-style">Info</button>
-  </div>
-
-  <div id="infoModal" class="modal">
-    <div class="modal-content">
-      <h2>About Our Fund</h2>
-      <p>
-        This fund was created to help those in need and to allocate resources to the most important necessities. 
-      All donations are directed solely towards charitable purposes, including supporting people in difficult situations, developing social projects, and assisting those who truly need help.
-      We guarantee complete transparency and honesty in the allocation of funds. 
-      Funds are used only for the benefit of society and those in need of assistance.
-      </p>
-      <button id="closeInfo" class="button-style">Close</button>
+    <div class="plan-card">
+      <span class="plan-title">Рельеф</span>
+      <p class="plan-desc">Интенсивные тренировки и кардио-протоколы для сжигания жира.</p>
+      <button class="btn-select">Подробнее</button>
     </div>
   </div>
 
-  <script src="{{ url_for('static', path='js/welcome.js') }}"></script>
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>Главная</span>
+    </a>
+    <a href="/auth/welcome" class="nav-item active">
+      <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+      <span>Планы</span>
+    </a>
+    <a href="/auth/profile" class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <span>Профиль</span>
+    </a>
+  </nav>
+
 </body>
 </html>
