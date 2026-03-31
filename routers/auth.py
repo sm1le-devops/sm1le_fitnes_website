@@ -150,80 +150,27 @@ async def donate(data: DonateRequest, request: Request, username: str | None = C
 
 @router.get("/profile", response_class=HTMLResponse)
 async def get_profile_page(request: Request, db: Session = Depends(get_db)):
-    # 1. Извлекаем имя пользователя из куки
+    # Извлекаем имя пользователя из куки
     username = request.cookies.get("username")
     
-    # 2. Если куки нет — перенаправляем на логин
+    # ЕСЛИ ПОЛЬЗОВАТЕЛЬ НЕ АВТОРИЗОВАН -> ПЕРЕНАПРАВЛЯЕМ НА РЕГИСТРАЦИЮ
     if not username:
-        return RedirectResponse(url="/auth/login", status_code=303)
+        return RedirectResponse(url="/auth/register", status_code=303)
 
-    # 3. Ищем пользователя в базе данных
+    # Ищем пользователя в базе данных
     user = db.query(models.User).filter(models.User.username == username).first()
     
-    # 4. Если кука есть, но пользователя в базе нет (например, удален)
+    # Если кука есть, но пользователя нет в базе (ошибка данных)
     if not user:
-        response = RedirectResponse(url="/auth/login", status_code=303)
-        response.delete_cookie("username") # Чистим невалидную куку
+        response = RedirectResponse(url="/auth/register", status_code=303)
+        response.delete_cookie("username") # Сбрасываем некорректную куку
         return response
 
-    # 5. Генерируем новый CSRF токен для безопасности форм
-    csrf_token = generate_csrf_token()
-    avatar_url = f"/static/avatars/{user.avatar}" if user.avatar else "/static/default-avatar.png"
-    
-    # 6. Отдаем страницу с данными пользователя
-    response = templates.TemplateResponse("profile.html", {
+    # Если всё хорошо, отдаем страницу профиля с данными пользователя
+    return templates.TemplateResponse("profile.html", {
         "request": request,
-        "current_user": user,
-        "avatar_url": avatar_url,
-        "csrf_token": csrf_token
+        "user": user
     })
-    
-    # Обновляем CSRF токен в куках
-    response.set_cookie(
-        "csrf_token", 
-        csrf_token, 
-        httponly=True, 
-        secure=True, 
-        samesite="none"
-    )
-    return response
-
-
-@router.get("/profile", response_class=HTMLResponse)
-def profile(
-    request: Request,
-    db: Session = Depends(get_db),
-    username: str | None = Cookie(default=None)
-):
-    if not username:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    user = db.query(models.User).filter(models.User.username == username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    avatar_url = f"/static/avatars/{user.avatar}" if user.avatar else None
-    csrf_token = generate_csrf_token()
-
-    # Передаём csrf_token в шаблон (чтобы вставить в hidden input)
-    response = templates.TemplateResponse(
-        "profile.html",
-        {
-            "request": request,
-            "current_user": user,
-            "avatar_url": avatar_url,
-            "csrf_token": csrf_token
-        }
-    )
-    # Кладём CSRF в httponly-куку (невидимую для JS)
-    response.set_cookie(
-        "csrf_token",
-        csrf_token,
-        httponly=True,
-        secure=True,
-        samesite="none"
-    )
-    return response
 
 
 @router.post("/profile")
@@ -327,62 +274,7 @@ async def update_profile(
 
 
 #end
-@router.get("/send_ad", response_class=HTMLResponse)
-async def get_send_ad_form(request: Request):
-    csrf_token = generate_csrf_token()
-    response = templates.TemplateResponse(
-        "send_ad.html",  # <-- отдаём именно форму объявления
-        {"request": request, "csrf_token": csrf_token}
-    )
-    # Устанавливаем csrf_token в куки
-    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=True, samesite="lax")
-    return response
 
-
-
-@router.post("/send_ad")
-async def send_ad(request: Request):
-    form_data = await request.form()
-
-    # CSRF Проверка
-    csrf_token_form = form_data.get("csrf_token")
-    csrf_token_cookie = request.cookies.get("csrf_token")
-    if not csrf_token_form or not csrf_token_cookie:
-        raise HTTPException(status_code=403, detail="CSRF token missing")
-    if csrf_token_form != csrf_token_cookie:
-        raise HTTPException(status_code=403, detail="Invalid CSRF token")
-    if not validate_csrf_token(csrf_token_form):
-        raise HTTPException(status_code=403, detail="Expired or invalid CSRF token")
-
-    title = form_data.get("title")
-    message = form_data.get("message")
-    photos = form_data.getlist("photo")  # Получаем список файлов
-
-    sender_email = os.getenv("MAIL_USER")
-    receiver_email = os.getenv("MAIL_USER")
-    password = os.getenv("MAIL_PASSWORD")
-
-    msg = MIMEMultipart()
-    msg["From"] = sender_email
-    msg["To"] = receiver_email
-    msg["Subject"] = f"Новое объявление: {title}"
-    msg.attach(MIMEText(message, "plain"))
-
-    # Прикрепляем все фото
-    for file in photos:
-        if file.filename:
-            data = await file.read()
-            part = MIMEBase("application", "octet-stream")
-            part.set_payload(data)
-            encoders.encode_base64(part)
-            part.add_header("Content-Disposition", f"attachment; filename={file.filename}")
-            msg.attach(part)
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(sender_email, password)
-        server.send_message(msg)
-
-    return HTMLResponse("<h1>Объявление отправлено!</h1><a href='/auth/welcome'>Вернуться</a>")
 
 @router.post("/logout")
 async def logout():
