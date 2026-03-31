@@ -127,14 +127,25 @@ async def login(data: LoginRequest, request: Request, db: Session = Depends(get_
 
 @router.get("/welcome", response_class=HTMLResponse)
 def welcome(request: Request, db: Session = Depends(get_db), username: str | None = Cookie(default=None), donation: str | None = Query(default=None)):
+    # Если куки нет — на регистрацию
     if not username:
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url="/auth/register", status_code=303)
+    
     users = db.query(models.User).order_by(models.User.amount.desc()).limit(10).all()
     current_user = db.query(models.User).filter(models.User.username == username).first()
+    
+    # Если кука есть, но юзер удален из базы
     if not current_user:
-        return RedirectResponse(url="/", status_code=303)
-    return templates.TemplateResponse("welcome.html", {"request": request, "top_users": users, "current_user": current_user, "donation": donation})
-
+        response = RedirectResponse(url="/auth/register", status_code=303)
+        response.delete_cookie("username", path="/")
+        return response
+        
+    return templates.TemplateResponse("welcome.html", {
+        "request": request, 
+        "top_users": users, 
+        "current_user": current_user, 
+        "donation": donation
+    })
 
 @router.get("/login", response_class=HTMLResponse)
 async def get_login(request: Request):
