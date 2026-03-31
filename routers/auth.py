@@ -107,7 +107,7 @@ async def login(data: LoginRequest, request: Request, db: Session = Depends(get_
     if not db_user or not verify_password(data.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-    response = JSONResponse(content={"redirect_url": "/auth/welcome"})
+    response = JSONResponse(content={"redirect_url": "/auth/profile"})
     response.set_cookie("username", db_user.username, httponly=True, samesite="none", secure=True)
     response.set_cookie("csrf_token", generate_csrf_token(), httponly=True, samesite="none", secure=True)
     return response
