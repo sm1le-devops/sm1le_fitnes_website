@@ -9,7 +9,6 @@
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; position: relative; }
     
-    /* Логотип СЛЕВА вверху */
     .top-logo {
       position: absolute; top: 20px; left: 20px;
       text-decoration: none; color: var(--accent);
@@ -19,14 +18,14 @@
 
     .auth-card { background: var(--card-bg); padding: 32px; border-radius: 24px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px rgba(0,0,0,0.3); margin: 16px; position: relative; z-index: 1; }
     h2 { text-align: center; margin: 0 0 24px 0; font-size: 24px; }
-    input { width: 100%; padding: 14px; margin-bottom: 16px; border-radius: 12px; border: 1px solid #334155; background: #0F172A; color: white; outline: none; font-size: 16px; }
-    input:focus { border-color: var(--accent); }
+    input { width: 100%; padding: 14px; margin-bottom: 16px; border-radius: 12px; border: 1px solid #334155; background: #0F172A; color: white; outline: none; font-size: 16px; transition: 0.3s; }
+    input:focus { border-color: var(--accent); background: #161e31; }
     .btn-auth { width: 100%; padding: 16px; border-radius: 14px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
     .btn-auth:active { transform: scale(0.98); }
     
     .footer-links { text-align: center; margin-top: 20px; font-size: 14px; color: var(--text); }
     .footer-links a { color: var(--accent); text-decoration: none; font-weight: 600; }
-    #message { color: #ef4444; text-align: center; margin-bottom: 10px; font-size: 14px; min-height: 18px; }
+    #message { color: #ef4444; text-align: center; margin-bottom: 15px; font-size: 14px; min-height: 18px; padding: 0 10px; }
   </style>
 </head>
 <body>
@@ -35,6 +34,8 @@
     <h2>Вход</h2>
     <div id="message"></div>
     <form id="login-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      
       <input type="text" name="username" placeholder="Логин" required>
       <input type="password" name="password" placeholder="Пароль" required>
       <button type="submit" class="btn-auth">Войти</button>
@@ -43,17 +44,46 @@
       Нет аккаунта? <a href="/auth/register">Создать</a>
     </div>
   </div>
+
   <script>
     document.getElementById('login-form').onsubmit = async (e) => {
       e.preventDefault();
+      const msgEl = document.getElementById('message');
+      msgEl.innerText = 'Проверка...';
+      msgEl.style.color = 'var(--text-muted)';
+
       const formData = new FormData(e.target);
-      const res = await fetch('/auth/login', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(Object.fromEntries(formData))
-      });
-      if (res.ok) window.location.href = '/auth/profile';
-      else document.getElementById('message').innerText = 'Ошибка входа';
+      const jsonData = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(jsonData)
+        });
+
+        const result = await res.json();
+
+        if (res.ok) {
+          msgEl.style.color = '#22c55e';
+          msgEl.innerText = 'Успешно! Входим...';
+          // В auth.py сервер возвращает JSON с redirect_url
+          window.location.href = result.redirect_url || '/auth/profile';
+        } else {
+          msgEl.style.color = '#ef4444';
+          // Выводим конкретную ошибку от сервера (например, "Неверный пароль")
+          if (Array.isArray(result.detail)) {
+            msgEl.innerText = result.detail[0].msg; // Ошибка валидации Pydantic
+          } else {
+            msgEl.innerText = result.detail || 'Ошибка входа';
+          }
+        }
+      } catch (err) {
+        msgEl.style.color = '#ef4444';
+        msgEl.innerText = 'Ошибка соединения с сервером';
+      }
     };
   </script>
 </body>
