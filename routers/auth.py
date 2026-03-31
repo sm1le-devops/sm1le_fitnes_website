@@ -102,16 +102,16 @@ async def login(data: LoginRequest, request: Request, db: Session = Depends(get_
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
     # --- ВОТ ЭТОТ БЛОК ЗАМЕНИ ---
-    response = JSONResponse(content={"redirect_url": "/auth/welcome"})
+    response = JSONResponse(content={"redirect_url": "/auth/profile"})
     
     # Настройки для Render (Production)
     response.set_cookie(
         key="username",
         value=db_user.username,
         httponly=True,
-        samesite="none",   # КРИТИЧНО: для HTTPS и переходов между страницами
-        secure=True,       # КРИТИЧНО: для Render (HTTPS)
-        path="/"           # КРИТИЧНО: чтобы кука была видна на главной '/'
+        samesite="none",   
+        secure=True,       
+        path="/"           
     )
 
     response.set_cookie(
