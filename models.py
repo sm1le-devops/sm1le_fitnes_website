@@ -9,7 +9,9 @@ class User(Base):
     username = Column(String(20), unique=True, index=True, nullable=False)
     email = Column(String(50), unique=True, index=True, nullable=False)
     hashed_password = Column(String(200), nullable=False)
-    amount = Column(Float, nullable=False, default=0.0)  # сумма донатов
-    last_donation_time = Column(DateTime, default=None)  # время последнего доната
-    avatar = Column(String(255), nullable=True)         # поле аватара
-    philanthrop_level = Column(String(20), nullable=False, default="0")
+    gender = Column(String(10), nullable=True)
+    age = Column(Integer, nullable=True)
+    weight = Column(Float, nullable=True)
+    height = Column(Float, nullable=True)
+    target = Column(String(50), nullable=True) # Цель: похудение/набор
+    current_plan = Column(String(50), nullable=True) # ID купленного плана

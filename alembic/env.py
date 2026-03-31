@@ -1,5 +1,9 @@
+import sys
+import os
+sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
 from logging.config import fileConfig
-from models import Base
+from database import Base  # Импортируем твой Base
+import models
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
@@ -8,6 +12,7 @@ from alembic import context
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:

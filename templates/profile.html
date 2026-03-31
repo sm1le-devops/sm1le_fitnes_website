@@ -1,309 +1,236 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<title>User Profile</title>
-<link rel="icon" type="image/png" href="/static/ava.png">
-<style>
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  /* Фото под фиолетовым градиентом */
-  background: 
-    linear-gradient(135deg, rgba(106,17,203,0.7) 0%, rgba(142,68,173,0.7) 100%), 
-    url('https://top-donators.onrender.com/static/welcome_phone.jpg') no-repeat center center fixed;
-  background-size: cover;
-  color: #333;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  overflow: hidden;
-  position: relative;
-}
-
-.mountains-top {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 20%;
-      transform: scaleY(-1);
-      pointer-events: none;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Мой Профиль | sm1le.fitness</title>
+  <link rel="icon" type="image/png" href="/static/ava.png">
+  <style>
+    :root {
+      --bg: #0F172A;          /* Глубокий синий фон */
+      --card-bg: #1E293B;     /* Фон карточек/инпутов */
+      --accent: #F97316;      /* Оранжевый акцент */
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --error: #ef4444;
+      --success: #22c55e;
     }
 
-    /* Линия снизу */
-    .mountains-bottom {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 40%;
-      pointer-events: none;
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
-#profile-container {
-  background: rgba(255, 255, 255, 0.9);
-  padding: 20px 25px;
-  border-radius: 12px;
-  width: 350px;
-  box-shadow: 0 8px 20px rgba(122, 76, 224, 0.4);
-  text-align: center;
-  position: relative;
-  z-index: 2; /* над линиями */
-}
+    /* Контейнер с отступом под нижний навбар */
+    .app-wrapper { padding: 20px 16px 100px 16px; flex: 1; }
 
-h2 {
-  margin-bottom: 20px;
-  font-weight: 600;
-  color: #4a2e9e;
-}
+    /* Шапка Профиля */
+    .profile-header { text-align: center; margin-bottom: 25px; padding-top: 10px; }
+    .profile-header h1 { font-size: 24px; margin: 0; font-weight: 800; }
+    .profile-header p { color: var(--text-muted); margin: 4px 0 0; font-size: 14px; }
 
-#avatar-wrapper {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
-  margin-bottom: 15px;
-  width: 90px;
-  height: 90px;
-}
+    /* Аватар */
+    #avatar-wrapper {
+      position: relative; display: inline-block; cursor: pointer;
+      margin-bottom: 15px; width: 100px; height: 100px;
+    }
+    img.avatar {
+      width: 100px; height: 100px; border-radius: 50%;
+      object-fit: cover; border: 3px solid var(--accent);
+      box-shadow: 0 4px 15px rgba(249, 115, 22, 0.2);
+    }
+    #avatar-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      border-radius: 50%; background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: 0.3s ease;
+    }
+    #avatar-wrapper:hover #avatar-overlay { opacity: 1; }
 
-img.avatar {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #7a4ce0;
-}
+    /* Форма */
+    .form-section { margin-bottom: 20px; }
+    
+    label {
+      display: block; font-weight: 600; font-size: 13px;
+      color: var(--text-muted); margin-bottom: 6px; padding-left: 4px;
+    }
+    
+    input, select {
+      width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #334155;
+      background: var(--card-bg); color: var(--text);
+      font-size: 15px; outline: none; box-sizing: border-box;
+      transition: border-color 0.3s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    input::placeholder { color: #4f5e75; }
 
-#avatar-overlay {
-  position: absolute;
-  top: 0; left: 0; width: 90px; height: 90px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  user-select: none;
-}
+    /* Сетка */
+    .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 
-#avatar-wrapper:hover #avatar-overlay { opacity: 1; }
+    /* Сообщения */
+    #message {
+      margin: 10px 0; font-size: 13px; font-weight: 600;
+      min-height: 18px; text-align: center;
+    }
 
-form label {
-  display: block;
-  text-align: left;
-  margin-top: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  color: #4a2e9e;
-}
+    /* Кнопки */
+    .btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+    
+    button {
+      width: 100%; padding: 16px; border-radius: 14px; border: none;
+      font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.3s;
+    }
+    
+    .btn-save {
+      background: var(--accent); color: white;
+      box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3);
+    }
+    .btn-save:disabled { background: #334155; color: #64748b; box-shadow: none; cursor: not-allowed; }
 
-input, button {
-  width: 100%;
-  padding: 8px 12px;
-  margin-top: 5px;
-  border-radius: 8px;
-  border: none;
-  font-size: 14px;
-  outline: none;
-  box-sizing: border-box;
-}
+    .btn-logout { background: #334155; color: #f8fafc; }
 
-input {
-  background: #e3dcff;
-  color: #4a2e9e;
-  transition: background-color 0.3s ease;
-}
-
-input::placeholder { color: #9b8ed6; }
-input:focus { background: #d0c1ff; color: #3e228e; }
-
-button {
-  margin-top: 20px;
-  background: linear-gradient(135deg, #7a4ce0, #5a31b8);
-  color: white;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 6px 15px rgba(122, 76, 224, 0.6);
-  transition: background 0.3s ease, box-shadow 0.3s ease;
-}
-
-button:hover:enabled {
-  background: linear-gradient(135deg, #5a31b8, #7a4ce0);
-  box-shadow: 0 8px 20px rgba(122, 76, 224, 0.8);
-}
-
-button:disabled { background: #aaa; cursor: not-allowed; box-shadow: none; }
-
-#logout-btn {
-  background: linear-gradient(135deg, #e03b3b, #b82323);
-  margin-top: 10px;
-}
-#logout-btn:hover {
-  background: linear-gradient(135deg, #b82323, #e03b3b);
-  box-shadow: 0 8px 20px rgba(224, 59, 59, 0.8);
-}
-
-#message {
-  margin-top: 15px;
-  min-height: 18px;
-  font-weight: 600;
-  color: #5a31b8;
-}
-
-a { display: inline-block; margin-top: 15px; color: #7a4ce0; text-decoration: none; font-size: 14px; transition: color 0.3s ease; }
-a:hover { color: #5a31b8; }
-</style>
+    /* Навбар */
+    .nav-bar {
+      position: fixed; bottom: 0; left: 0; width: 100%; height: 75px;
+      background: #FFFFFF; display: flex; justify-content: space-around;
+      align-items: center; border-top-left-radius: 24px; border-top-right-radius: 24px;
+      box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 100;
+    }
+    .nav-item { text-decoration: none; color: #94A3B8; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 600; }
+    .nav-item.active { color: var(--accent); }
+    .nav-icon { width: 24px; height: 24px; background: #F1F5F9; border-radius: 8px; margin-bottom: 4px; }
+    .active .nav-icon { background: #FFEDD5; }
+  </style>
 </head>
 <body>
 
-<!-- Верхняя линия -->
-<svg class="mountains-top" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
-  <path d="M0 250 L150 100 L300 230 L450 120 L600 200 L750 90 L900 210 L1000 150 L1000 300 L0 300 Z" 
-        fill="none" stroke="white" stroke-width="2"/>
-</svg>
+  <div class="app-wrapper">
+    <div class="profile-header">
+      <div id="avatar-wrapper" onclick="document.getElementById('avatar').click()">
+        <img src="{{ avatar_url or '/static/default-avatar.png' }}" alt="Avatar" class="avatar" id="avatar-preview" />
+        <div id="avatar-overlay">
+          <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M12 17a5 5 0 100-10 5 5 0 000 10zm-6-9.9V7a1 1 0 011-1h1.2l.6-1.2A1 1 0 0110.6 4h2.8a1 1 0 01.9.6L15 6h1.2a1 1 0 011 1v.1M4 8h16v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/></svg>
+        </div>
+      </div>
+      <h1 id="display-username">{{ current_user.username }}</h1>
+      <p>Твой личный фитнес-профиль</p>
+    </div>
 
-<!-- Нижняя линия -->
-<svg class="mountains-bottom" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
-  <path d="M0 250 L150 100 L300 230 L450 120 L600 200 L750 90 L900 210 L1000 150 L1000 300 L0 300 Z" 
-        fill="none" stroke="white" stroke-width="2"/>
-</svg>
+    <form id="profile-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      
+      <div class="form-section">
+        <label>Имя пользователя</label>
+        <input type="text" id="username" name="username" value="{{ current_user.username }}" required />
+        
+        <label>Email</label>
+        <input type="email" id="email" name="email" value="{{ current_user.email }}" required />
+        
+        <label>Новый пароль</label>
+        <input type="password" id="password" name="password" placeholder="Оставьте пустым для сохранения" />
+      </div>
 
-<div id="profile-container">
-  <h2>Profile</h2>
+      <div class="form-section">
+        <div class="grid-inputs">
+          <div><label>Вес (кг)</label><input type="number" step="0.1" id="weight" name="weight" value="{{ current_user.weight or '' }}" /></div>
+          <div><label>Рост (см)</label><input type="number" id="height" name="height" value="{{ current_user.height or '' }}" /></div>
+        </div>
+        <div class="grid-inputs">
+          <div><label>Возраст</label><input type="number" id="age" name="age" value="{{ current_user.age or '' }}" /></div>
+          <div>
+            <label>Пол</label>
+            <select id="gender" name="gender">
+              <option value="">Не выбран</option>
+              <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>Мужской</option>
+              <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>Женский</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
-  <div id="avatar-wrapper" title="Change Photo">
-    <img src="{{ avatar_url or '/static/default-avatar.png' }}" alt="Avatar" class="avatar" id="avatar-preview" />
-    <label for="avatar" id="avatar-overlay">
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="white" viewBox="0 0 24 24">
-        <path d="M12 17a5 5 0 100-10 5 5 0 000 10zm-6-9.9V7a1 1 0 011-1h1.2l.6-1.2A1 1 0 0110.6 4h2.8a1 1 0 01.9.6L15 6h1.2a1 1 0 011 1v.1M4 8h16v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/>
-      </svg>
-    </label>
+      <input type="file" id="avatar" name="avatar" accept="image/*" style="display:none;" />
+      
+      <div id="message"></div>
+
+      <div class="btn-group">
+        <button type="submit" class="btn-save" id="save-button" disabled>Сохранить изменения</button>
+        <button type="button" class="btn-logout" id="logout-btn">Выйти из аккаунта</button>
+      </div>
+    </form>
   </div>
 
-  <form id="profile-form" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label>Username</label>
-    <input type="text" id="username" name="username" value="{{ current_user.username }}" required />
-    <label>Email</label>
-    <input type="email" id="email" name="email" value="{{ current_user.email }}" required />
-    <label>New password (leave blank to keep current)</label>
-    <input type="password" id="password" name="password" placeholder="New password" />
-    <input type="file" id="avatar" name="avatar" accept="image/*" style="display:none;" />
-    <button type="submit" id="save-button" disabled>Save Changes</button>
-    <button type="button" id="logout-btn">Logout</button>
-  </form>
-
-  <p id="message"></p>
-  <button type="button" id="back-btn">Back</button>
-</div>
+  <nav class="nav-bar">
+    <a href="/" class="nav-item"><div class="nav-icon"></div><span>Главная</span></a>
+    <a href="/workouts" class="nav-item"><div class="nav-icon"></div><span>Планы</span></a>
+    <a href="/auth/profile" class="nav-item active"><div class="nav-icon"></div><span>Профиль</span></a>
+  </nav>
 
   <script>
     const form = document.getElementById('profile-form');
     const message = document.getElementById('message');
     const avatarInput = document.getElementById('avatar');
     const avatarPreview = document.getElementById('avatar-preview');
-    const logoutBtn = document.getElementById('logout-btn');
     const saveButton = document.getElementById('save-button');
+    const displayUsername = document.getElementById('display-username');
 
-    const initialUsername = document.getElementById('username').value;
-    const initialEmail = document.getElementById('email').value;
+    const initialData = {
+      username: document.getElementById('username').value,
+      email: document.getElementById('email').value,
+      weight: document.getElementById('weight').value,
+      height: document.getElementById('height').value,
+      age: document.getElementById('age').value,
+      gender: document.getElementById('gender').value
+    };
 
-    function containsCyrillic(str) {
-      return /[а-яё]/i.test(str);
-    }
+    function containsCyrillic(str) { return /[а-яё]/i.test(str); }
 
-    function validatePassword(password) {
-      if (password.length < 8) {
-        return 'Password must be at least 8 characters.';
-      }
-      if (!/[a-z]/.test(password)) {
-        return 'Password must contain at least one lowercase letter.';
-      }
-      if (!/[0-9]/.test(password)) {
-        return 'Password must contain at least one number.';
-      }
-      if (containsCyrillic(password)) {
-        return 'Password must not contain Cyrillic letters.';
-      }
-      return '';
-    }
-
-    function validateFields() {
+    function checkChanges() {
       const username = document.getElementById('username').value.trim();
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value.trim();
+      
+      // Живое обновление имени в заголовке
+      displayUsername.textContent = username || initialData.username;
 
-      let error = '';
-
-      if (containsCyrillic(username)) {
-        error = 'Username must not contain Cyrillic characters.';
-      } else if (containsCyrillic(email)) {
-        error = 'Email must not contain Cyrillic characters.';
-      } else if (password.length > 0) {
-        error = validatePassword(password);
-      }
-
-      if (error) {
-        message.textContent = error;
-        message.style.color = '#d6336c';
-        saveButton.disabled = true;
-        return false;
+      let hasError = false;
+      if (containsCyrillic(username) || containsCyrillic(email) || containsCyrillic(password)) {
+        message.textContent = 'Кириллица запрещена в полях логина/пароля/email';
+        message.style.color = 'var(--error)';
+        hasError = true;
       } else {
         message.textContent = '';
-        return true;
-      }
-    }
-
-    function checkChanges() {
-      if (!validateFields()) {
-        saveButton.disabled = true;
-        return;
       }
 
-      const usernameChanged = document.getElementById('username').value !== initialUsername;
-      const emailChanged = document.getElementById('email').value !== initialEmail;
-      const passwordChanged = document.getElementById('password').value.length > 0;
-      const avatarChanged = avatarInput.files.length > 0;
-
-      saveButton.disabled = !(usernameChanged || emailChanged || passwordChanged || avatarChanged);
-    }
-
-    document.getElementById('username').addEventListener('input', onInputHandler);
-    document.getElementById('email').addEventListener('input', onInputHandler);
-    document.getElementById('password').addEventListener('input', onInputHandler);
-
-    function onInputHandler() {
-      if (validateFields()) {
-        checkChanges();
+      let changed = avatarInput.files.length > 0 || password.length > 0;
+      for (const id in initialData) {
+        if (document.getElementById(id).value !== initialData[id]) { changed = true; break; }
       }
+      saveButton.disabled = !changed || hasError;
     }
+
+    form.querySelectorAll('input, select').forEach(el => el.addEventListener('input', checkChanges));
 
     avatarInput.addEventListener('change', () => {
       const file = avatarInput.files[0];
-      if (file) {
-        avatarPreview.src = URL.createObjectURL(file);
-      }
+      if (file) avatarPreview.src = URL.createObjectURL(file);
       checkChanges();
     });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-
-      if (!validateFields()) {
-        return;
-      }
+      saveButton.disabled = true;
+      message.textContent = 'Сохранение...';
+      message.style.color = 'var(--text)';
 
       const formData = new FormData(form);
-      const csrfToken = document.cookie.match(/csrf_token=([^;]+)/)?.[1];
-      if (csrfToken) {
-        formData.append("csrf_token", csrfToken);
-      }
 
       try {
         const res = await fetch('/auth/profile', {
@@ -311,44 +238,27 @@ a:hover { color: #5a31b8; }
           credentials: 'include',
           body: formData
         });
-
-        const data = await res.json();
-
+        
         if (res.ok) {
-          message.textContent = data.message || 'Profile updated';
-          message.style.color = '#4a2e9e';
-          saveButton.disabled = true;
-          setTimeout(() => location.reload(), 500);
+          message.textContent = 'Готово! Возвращаемся на главную...';
+          message.style.color = 'var(--success)';
+          // Перекидываем на главную, чтобы обновилась аватарка в шапке
+          setTimeout(() => { window.location.href = '/'; }, 1000);
         } else {
-          message.textContent = data.detail || 'Update error';
-          message.style.color = '#d6336c';
+          const data = await res.json();
+          throw new Error(data.detail || 'Ошибка сервера');
         }
       } catch (err) {
-        message.textContent = 'Server connection error';
-        message.style.color = '#d6336c';
+        message.textContent = err.message;
+        message.style.color = 'var(--error)';
+        saveButton.disabled = false;
       }
     });
 
-    logoutBtn.addEventListener('click', async () => {
-      try {
-        const response = await fetch('/auth/logout', {
-          method: 'POST',
-          credentials: 'include'
-        });
-        if (!response.ok) {
-          console.warn('Server error on logout');
-        }
-      } catch (e) {
-        console.warn('Logout request error', e);
-      }
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
       window.location.href = '/';
     });
-
-    checkChanges();
-    document.getElementById('back-btn').addEventListener('click', () => {
-    window.location.href = '/auth/welcome';
-  });
   </script>
-
 </body>
 </html>
