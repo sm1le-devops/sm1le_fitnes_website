@@ -105,7 +105,7 @@ async def forgot_password(
         SECRET_KEY,
         algorithm=ALGORITHM
     )
-    reset_link = f"{os.getenv('YOUR_DOMAIN', 'https://top-donators1.onrender.com')}/auth/reset-password?token={token}"
+    reset_link = f"{os.getenv("RENDER_EXTERNAL_URL") or os.getenv("YOUR_DOMAIN") or "http://localhost:8000"}/auth/reset-password?token={token}"
 
     message = MessageSchema(
         subject="Password recovery",

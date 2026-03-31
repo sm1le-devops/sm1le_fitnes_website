@@ -23,7 +23,6 @@ templates = Jinja2Templates(directory="templates")
 # --- Redis init ---
 redis_client: Redis | None = None
 
-
 @app.on_event("startup")
 async def startup():
     redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
@@ -44,6 +43,19 @@ origins = [
     "http://localhost:8000",
     "http://127.0.0.1:8000"
 ]
+
+# Добавляем Render URL в список ДО инициализации мидлвары
+RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL")
+if RENDER_EXTERNAL_URL:
+    origins.append(RENDER_EXTERNAL_URL)
+    # Удаляем лишний слеш в конце, если он есть, т.к. CORS чувствителен к нему
+    clean_url = RENDER_EXTERNAL_URL.rstrip('/')
+    if clean_url not in origins:
+        origins.append(clean_url)
+    # На всякий случай вариант с http
+    origins.append(clean_url.replace("https://", "http://"))
+
+# Теперь добавляем мидлвару ОДИН РАЗ с полным списком
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -51,7 +63,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # --- Static files ---
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
