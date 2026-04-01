@@ -3,9 +3,11 @@ import os, re
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import (
-    APIRouter, Depends, HTTPException, Request, Cookie, Form, JSONResponse
+    APIRouter, Depends, HTTPException, Request, Cookie, Form
 )
-from fastapi.responses import HTMLResponse, RedirectResponse
+# JSONResponse, HTMLResponse и RedirectResponse импортируем только отсюда
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
+
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
