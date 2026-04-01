@@ -107,7 +107,7 @@ async def login(data: LoginRequest, request: Request, db: Session = Depends(get_
     response.set_cookie(
         key="username", 
         value=db_user.username, # Передаем имя из базы
-        httponly=True, 
+        httponly=False  , 
         secure=True, 
         samesite="lax", 
         path="/",              # КРИТИЧНО: кука будет работать на всем сайте
@@ -117,7 +117,7 @@ async def login(data: LoginRequest, request: Request, db: Session = Depends(get_
     response.set_cookie(
         key="csrf_token", 
         value=generate_csrf_token(), 
-        httponly=True, 
+        httponly=False, 
         secure=True, 
         samesite="lax", 
         path="/"
@@ -152,14 +152,14 @@ def welcome(request: Request, db: Session = Depends(get_db), username: str | Non
 async def get_login(request: Request):
     csrf_token = generate_csrf_token()
     response = templates.TemplateResponse("login.html", {"request": request, "csrf_token": csrf_token})
-    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=True, samesite="none", path="/")
+    response.set_cookie("csrf_token", csrf_token, httponly=False, secure=True, samesite="lax", path="/")
     return response
 
 @router.get("/register", response_class=HTMLResponse)
 async def get_register(request: Request):
     csrf_token = generate_csrf_token()
     response = templates.TemplateResponse("register.html", {"request": request, "csrf_token": csrf_token})
-    response.set_cookie("csrf_token", csrf_token, httponly=True, secure=True, samesite="none", path="/")
+    response.set_cookie("csrf_token", csrf_token, httponly=False, secure=True, samesite="lax", path="/")
     return response
 
 
