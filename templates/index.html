@@ -31,6 +31,7 @@
 
     .app-wrapper {
       padding: 20px 16px 100px 16px;
+      /* Отступ снизу под новое меню */
       animation: fadeIn 0.5s ease-out;
     }
 
@@ -188,57 +189,70 @@
       z-index: 2;
     }
 
-    /* Навбар (Tab Bar) */
-    .tab-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 80px;
-      background: rgba(30, 41, 59, 0.95);
-      backdrop-filter: blur(15px);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      padding-bottom: 15px;
-      z-index: 1000;
-    }
-
-    .tab-item {
-      text-decoration: none;
-      color: var(--text-muted);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 11px;
-      font-weight: 600;
-      transition: 0.3s;
-      width: 25%;
-      cursor: pointer;
-    }
-
-    .tab-item.active {
-      color: var(--accent);
-    }
-
-    .tab-item svg {
-      width: 24px;
-      height: 24px;
-      margin-bottom: 4px;
-      transition: 0.3s;
-    }
-
-    .tab-item.active svg {
-      transform: translateY(-2px);
-    }
-
     .footer-text {
       text-align: center;
       color: var(--text-muted);
       font-size: 12px;
       padding: 20px 0;
       opacity: 0.5;
+    }
+
+    /* === ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ НИЖНЕГО МЕНЮ (Старый CSS удален) === */
+    .bottom-nav {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: 400px;
+      background: rgba(30, 41, 59, 0.85);
+      /* Полупрозрачный фон */
+      backdrop-filter: blur(16px);
+      /* Размытие фона */
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 12px 16px;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .nav-item svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-item span {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item:active {
+      transform: scale(0.9);
+      /* Эффект нажатия */
     }
   </style>
 </head>
@@ -284,38 +298,36 @@
     <div class="footer-text">sm1le.fitness s.r.o • 2024</div>
   </div>
 
-  <nav class="tab-bar">
-    <a href="/" class="tab-item active">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item active">
+      <svg viewBox="0 0 24 24">
+        <path
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
       <span>Главная</span>
     </a>
-    <a href="/auth/welcome" class="tab-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
-        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
-        <line x1="6" y1="1" x2="6" y2="4"></line>
-        <line x1="10" y1="1" x2="10" y2="4"></line>
-        <line x1="14" y1="1" x2="14" y2="4"></line>
+    <a href="/auth/welcome" class="nav-item">
+      <svg viewBox="0 0 24 24">
+        <path
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
       </svg>
       <span>Планы</span>
     </a>
-    <a onclick="handleProfileClick()" class="tab-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-        stroke-linejoin="round">
+    <a href="/auth/profile" class="nav-item">
+      <svg viewBox="0 0 24 24">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
         <circle cx="12" cy="7" r="4"></circle>
       </svg>
       <span>Профиль</span>
     </a>
   </nav>
+  </nav>
 
   <script>
     let isAuthorized = false;
+
+    // Автоматическая проверка авторизации при загрузке
+    checkAuth();
 
     async function checkAuth() {
       try {
@@ -349,17 +361,6 @@
         isAuthorized = false;
       }
     }
-
-    // Логика перехода: если авторизован -> profile, если нет -> register
-    function handleProfileClick() {
-      if (isAuthorized) {
-        window.location.href = "/auth/profile";
-      } else {
-        window.location.href = "/auth/register";
-      }
-    }
-
-    
 
     function selectPlan(planId) {
       if (window.navigator.vibrate) window.navigator.vibrate(10);

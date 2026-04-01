@@ -1,55 +1,207 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Регистрация | sm1le.fitness</title>
   <style>
-    :root { --bg: #0F172A; --card-bg: #1E293B; --accent: #F97316; --text: #F8FAFC; --text-muted: #94A3B8; }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; position: relative; overflow: hidden; }
-    
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    :root {
+      --bg: #0F172A;
+      --card-bg: #1E293B;
+      --accent: #F97316;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
     .top-logo {
-      position: absolute; top: 20px; left: 20px;
-      text-decoration: none; color: var(--accent);
-      font-weight: 800; font-size: 18px; letter-spacing: -0.5px;
-      z-index: 10; transition: transform 0.3s;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.5px;
+      z-index: 10;
+      transition: transform 0.3s;
     }
-    .top-logo:hover { transform: scale(1.05); }
 
-    .auth-card { 
-      background: var(--card-bg); padding: 32px; border-radius: 24px; 
-      width: 100%; max-width: 400px; box-shadow: 0 20px 25px rgba(0,0,0,0.3); 
-      margin: 16px; position: relative; z-index: 1;
+    .top-logo:hover {
+      transform: scale(1.05);
+    }
+
+    .auth-card {
+      background: var(--card-bg);
+      padding: 32px;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
+      margin: 16px;
+      position: relative;
+      z-index: 1;
       animation: fadeInUp 0.6s ease-out;
     }
 
-    h2 { text-align: center; margin: 0; font-size: 24px; }
-    p.subtitle { color: var(--text-muted); text-align: center; margin-bottom: 24px; font-size: 14px; }
-    
-    .form-group { margin-bottom: 16px; }
-    label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; margin-left: 4px; }
-    input { 
-      width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #334155; 
-      background: #0F172A; color: white; outline: none; font-size: 16px; 
-      transition: all 0.3s; 
+    h2 {
+      text-align: center;
+      margin: 0;
+      font-size: 24px;
     }
-    input:focus { border-color: var(--accent); transform: scale(1.01); background: #161e31; }
-    
-    .btn-register { 
-      width: 100%; padding: 16px; border-radius: 14px; border: none; 
-      background: var(--accent); color: white; font-weight: bold; 
-      cursor: pointer; font-size: 16px; margin-top: 10px; transition: 0.2s; 
+
+    p.subtitle {
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 14px;
     }
-    .btn-register:active { transform: scale(0.97); }
-    
-    .footer-text { text-align: center; margin-top: 20px; font-size: 14px; color: var(--text); }
-    .footer-text a { color: var(--accent); text-decoration: none; font-weight: 600; }
-    #message { text-align: center; margin-bottom: 12px; font-size: 14px; min-height: 18px; }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      margin-left: 4px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: #0F172A;
+      color: white;
+      outline: none;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      transform: scale(1.01);
+      background: #161e31;
+    }
+
+    .btn-register {
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+      transition: 0.2s;
+    }
+
+    .btn-register:active {
+      transform: scale(0.97);
+    }
+
+    .footer-text {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .footer-text a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    #message {
+      text-align: center;
+      margin-bottom: 12px;
+      font-size: 14px;
+      min-height: 18px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: 400px;
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 12px 16px;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--text-muted);
+      transition: 0.3s;
+    }
+
+    .nav-item svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-item span {
+      font-size: 11px;
+      font-weight: 500;
+    }
   </style>
 </head>
+
 <body>
   <a href="/" class="top-logo">sm1le.fitness</a>
   <div class="auth-card">
@@ -75,12 +227,34 @@
       Уже есть аккаунт? <a href="/auth/login">Войти</a>
     </div>
   </div>
-
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item">
+      <svg viewBox="0 0 24 24">
+        <path
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+      <span>Главная</span>
+    </a>
+    <a href="/auth/welcome" class="nav-item">
+      <svg viewBox="0 0 24 24">
+        <path
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+      </svg>
+      <span>Планы</span>
+    </a>
+    <a href="/auth/profile" class="nav-item">
+      <svg viewBox="0 0 24 24">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+      <span>Профиль</span>
+    </a>
+  </nav>
   <script>
     document.getElementById('register-form').onsubmit = async (e) => {
       e.preventDefault();
       const msgEl = document.getElementById('message');
-      
+
       // Сброс стиля сообщения
       msgEl.innerText = 'Регистрация...';
       msgEl.style.color = 'var(--text-muted)';
@@ -91,12 +265,12 @@
 
       try {
         // 2. Отправляем запрос как JSON
-        const res = await fetch('/auth/register', { 
-          method: 'POST', 
+        const res = await fetch('/auth/register', {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(jsonData) 
+          body: JSON.stringify(jsonData)
         });
 
         const data = await res.json();
@@ -121,4 +295,5 @@
     };
   </script>
 </body>
+
 </html>
