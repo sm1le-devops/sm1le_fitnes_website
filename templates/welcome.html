@@ -36,16 +36,10 @@
     }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
-    /* Шапка — Чистый оранжевый */
     .header {
       text-align: center;
       margin-bottom: 30px;
@@ -66,7 +60,6 @@
       font-size: 16px;
     }
 
-    /* Карточки планов */
     .plan-card {
       background: var(--card-bg);
       border-radius: 24px;
@@ -75,11 +68,12 @@
       border: 1px solid rgba(255, 255, 255, 0.05);
       position: relative;
       overflow: hidden;
-      transition: transform 0.2s;
+      transition: transform 0.2s, border-color 0.2s;
     }
 
     .plan-card:active {
       transform: scale(0.98);
+      border-color: rgba(249, 115, 22, 0.3);
     }
 
     .plan-badge {
@@ -119,6 +113,14 @@
       font-weight: 600;
       cursor: pointer;
       transition: 0.3s;
+      display: block;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .btn-select:active {
+      background: var(--accent);
+      color: white;
     }
 
     /* НИЖНЕЕ МЕНЮ */
@@ -129,9 +131,9 @@
       transform: translateX(-50%);
       width: calc(100% - 32px);
       max-width: 400px;
-      background: rgba(30, 41, 59, 0.8);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       display: flex;
       justify-content: space-around;
       align-items: center;
@@ -156,10 +158,6 @@
       color: var(--accent);
     }
 
-    .nav-item:active {
-      transform: scale(0.9);
-    }
-
     .nav-item svg {
       width: 24px;
       height: 24px;
@@ -175,7 +173,6 @@
       font-weight: 500;
     }
 
-    /* Оранжевая залитая иконка для активного пункта */
     .nav-item.active svg {
       fill: var(--accent);
       filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.4));
@@ -188,41 +185,39 @@
   <div class="app-wrapper">
     <div class="header">
       <h1>Выбери план</h1>
-      <p>Привет, {{ current_user.username }}! Начнем тренировку?</p>
+      <p>Привет, {{ current_user.username if current_user else 'атлет' }}! Начнем?</p>
     </div>
 
     <div class="plan-card">
       <div class="plan-badge">NEW</div>
       <span class="plan-title">Быстрый старт</span>
       <p class="plan-desc">Идеально для новичков. Базовые упражнения и основы питания на 4 недели.</p>
-      <button class="btn-select">Подробнее</button>
+      <a href="#" class="btn-select">Подробнее</a>
     </div>
 
     <div class="plan-card">
       <span class="plan-title">Максимум силы</span>
       <p class="plan-desc">Программа для тех, кто хочет увеличить веса в базе. Тяжелый тренинг.</p>
-      <button class="btn-select">Подробнее</button>
+      <a href="#" class="btn-select">Подробнее</a>
     </div>
 
     <div class="plan-card">
       <span class="plan-title">Рельеф</span>
       <p class="plan-desc">Интенсивные тренировки и кардио-протоколы для сжигания жира.</p>
-      <button class="btn-select">Подробнее</button>
+      <a href="#" class="btn-select">Подробнее</a>
     </div>
   </div>
 
   <nav class="bottom-nav">
     <a href="/" class="nav-item">
       <svg viewBox="0 0 24 24">
-        <path
-          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
       <span>Главная</span>
     </a>
     <a href="/auth/welcome" class="nav-item active">
       <svg viewBox="0 0 24 24">
-        <path
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
       </svg>
       <span>Планы</span>
     </a>
@@ -236,5 +231,4 @@
   </nav>
 
 </body>
-
 </html>

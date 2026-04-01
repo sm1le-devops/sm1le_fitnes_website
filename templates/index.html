@@ -321,7 +321,7 @@
       <span>Профиль</span>
     </a>
   </nav>
-  </nav>
+  
 
   <script>
     let isAuthorized = false;
@@ -340,11 +340,13 @@
           document.getElementById('welcomeTitle').innerText = `Привет, ${user.username}!`;
           document.getElementById('welcomeSub').innerText = `Твой прогресс под контролем.`;
 
-          const avatarUrl = user.avatar ? `/static/avatars/${user.avatar}` : '/static/default-avatar.png';
-
+          // Вместо аватара просто показываем иконку профиля со ссылкой
           document.getElementById('authContent').innerHTML = `
-            <a href="/auth/profile" class="user-avatar-link">
-              <img src="${avatarUrl}" alt="Profile" onerror="this.src='/static/default-avatar.png'">
+            <a href="/auth/profile" class="user-avatar-link" style="display: flex; align-items: center; justify-content: center; background: var(--card-bg);">
+              <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; stroke: var(--accent); fill: none; stroke-width: 2;">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
             </a>
           `;
 
@@ -356,6 +358,10 @@
           }
         } else {
           isAuthorized = false;
+          // Если не авторизован, можно оставить пустоту или кнопку "Войти"
+          document.getElementById('authContent').innerHTML = `
+            <a href="/auth/login" style="color: var(--accent); text-decoration: none; font-weight: 700; font-size: 14px;">Войти</a>
+          `;
         }
       } catch (err) {
         isAuthorized = false;
