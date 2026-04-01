@@ -1,112 +1,243 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Мой Профиль | sm1le.fitness</title>
   <style>
     :root {
-      --bg: #0F172A; --card-bg: #1E293B; --accent: #F97316;
-      --text: #F8FAFC; --text-muted: #94A3B8; --error: #ef4444; --success: #22c55e;
+      --bg: #0F172A;
+      --card-bg: #1E293B;
+      --accent: #F97316;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --error: #ef4444;
+      --success: #22c55e;
     }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
-      margin: 0; padding: 0; background-color: var(--bg); color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
     }
 
-    .app-wrapper { padding: 20px 16px 120px 16px; max-width: 500px; margin: 0 auto; animation: fadeIn 0.5s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    .profile-header { text-align: center; margin-bottom: 25px; }
-    
-    #avatar-wrapper {
-      position: relative; display: inline-block; width: 110px; height: 110px;
-      margin-bottom: 15px; cursor: pointer; transition: 0.3s;
+    .app-wrapper {
+      padding: 20px 16px 120px 16px;
+      max-width: 500px;
+      margin: 0 auto;
+      animation: fadeIn 0.5s ease-out;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .profile-header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    #avatar-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 110px;
+      height: 110px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
     #avatar-wrapper:active { transform: scale(0.95); }
 
     img.avatar {
-      width: 110px; height: 110px; border-radius: 50%;
-      object-fit: cover; border: 3px solid var(--accent);
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--accent);
       box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
     }
-    
+
     #avatar-overlay {
-      position: absolute; bottom: 5px; right: 5px; 
-      background: var(--accent); width: 32px; height: 32px;
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-size: 16px; border: 3px solid var(--bg);
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      background: var(--accent);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      border: 3px solid var(--bg);
     }
 
-    .form-section { margin-bottom: 20px; }
-    label { display: block; font-size: 13px; color: var(--text-muted); margin: 10px 0 5px 4px; font-weight: 600; }
-    
-    input, select {
-      width: 100%; padding: 14px; border-radius: 16px; border: 1px solid #334155;
-      background: var(--card-bg); color: white; font-size: 15px; outline: none;
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 10px 0 5px 4px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      background: var(--card-bg);
+      color: white;
+      font-size: 15px;
+      outline: none;
       transition: 0.3s;
     }
-    input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2); }
-    
-    .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    #message { text-align: center; margin: 10px 0; font-size: 14px; min-height: 20px; font-weight: 600; }
-    
-    .btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
-    
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+    }
+
+    .grid-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    #message {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 14px;
+      min-height: 20px;
+      font-weight: 600;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
     button {
-      padding: 16px; border-radius: 16px; border: none; font-weight: 700;
-      font-size: 16px; cursor: pointer; transition: 0.3s;
+      padding: 16px;
+      border-radius: 16px;
+      border: none;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
     }
-    .btn-save { background: var(--accent); color: white; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
-    .btn-save:disabled { background: #334155; color: #64748b; cursor: not-allowed; box-shadow: none; }
-    .btn-logout { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-    .btn-logout:active { background: rgba(239, 68, 68, 0.2); }
 
-    /* Навбар (Копия из index.html) */
-    .tab-bar {
-      position: fixed; bottom: 0; left: 0; width: 100%; height: 85px;
-      background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(15px);
-      display: flex; justify-content: space-around; align-items: center;
-      border-top: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;
+    .btn-save {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+    }
+
+    .btn-save:disabled {
+      background: #334155;
+      color: #64748b;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-logout {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    /* === НИЖНИЙ НАВБАР === */
+    .bottom-nav {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: 400px;
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 12px 16px;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       z-index: 1000;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .tab-item { 
-      text-decoration: none; color: var(--text-muted); 
-      display: flex; flex-direction: column; align-items: center; 
-      font-size: 11px; font-weight: 600; transition: 0.3s;
-      width: 25%;
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--text-muted);
+      transition: 0.3s;
     }
-    .tab-item.active { color: var(--accent); }
-    .tab-item svg { width: 24px; height: 24px; margin-bottom: 4px; transition: 0.3s; }
-    .tab-item.active svg { transform: translateY(-2px); }
+
+    .nav-item svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-item span {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item.active svg {
+      fill: var(--accent);
+      filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.4));
+    }
   </style>
 </head>
+
 <body>
 
   <div class="app-wrapper">
     <div class="profile-header">
       <div id="avatar-wrapper" onclick="document.getElementById('avatar').click()">
-        <img src="{{ avatar_url if avatar_url else '/static/default-avatar.png' }}" class="avatar" id="avatar-preview" onerror="this.src='/static/default-avatar.png'">
+        <img src="{{ user.avatar_url if user and user.avatar_url else '/static/default-avatar.png' }}" class="avatar" id="avatar-preview"
+          onerror="this.src='/static/default-avatar.png'">
         <div id="avatar-overlay">📸</div>
       </div>
-      <h1 id="display-username" style="margin: 0; font-size: 24px;">{{ current_user.username if current_user else 'Профиль' }}</h1>
+      <h1 id="display-username" style="margin: 0; font-size: 24px;">{{ user.username if user else 'Профиль' }}</h1>
       <p style="color: var(--text-muted); font-size: 14px; margin-top: 5px;">Настройки аккаунта</p>
     </div>
 
     <form id="profile-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token if csrf_token else '' }}">
-      
+      <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token') }}">
+
       <div class="form-section">
         <label>Имя пользователя</label>
-        <input type="text" id="username" name="username" value="{{ current_user.username if current_user else '' }}" required>
-        
+        <input type="text" id="username" name="username" value="{{ user.username if user else '' }}" required>
+
         <label>Email</label>
-        <input type="email" id="email" name="email" value="{{ current_user.email if current_user else '' }}" required>
-        
+        <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required>
+
         <label>Новый пароль</label>
         <input type="password" id="password" name="password" placeholder="Оставьте пустым, чтобы не менять">
       </div>
@@ -114,11 +245,13 @@
       <div class="grid-inputs">
         <div>
           <label>Вес (кг)</label>
-          <input type="number" step="0.1" id="weight" name="weight" value="{{ current_user.weight if current_user and current_user.weight else '' }}" placeholder="0">
+          <input type="number" step="0.1" id="weight" name="weight"
+            value="{{ user.weight if user and user.weight else '' }}" placeholder="0">
         </div>
         <div>
           <label>Рост (см)</label>
-          <input type="number" id="height" name="height" value="{{ current_user.height if current_user and current_user.height else '' }}" placeholder="0">
+          <input type="number" id="height" name="height"
+            value="{{ user.height if user and user.height else '' }}" placeholder="0">
         </div>
       </div>
 
@@ -132,17 +265,24 @@
     </form>
   </div>
 
-  <nav class="tab-bar">
-    <a href="/" class="tab-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item">
+      <svg viewBox="0 0 24 24">
+        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
       <span>Главная</span>
     </a>
-    <a href="/workouts" class="tab-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+    <a href="/auth/welcome" class="nav-item">
+      <svg viewBox="0 0 24 24">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+      </svg>
       <span>Планы</span>
     </a>
-    <a href="/auth/profile" class="tab-item active">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+    <a href="/auth/profile" class="nav-item active">
+      <svg viewBox="0 0 24 24">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
       <span>Профиль</span>
     </a>
   </nav>
@@ -152,12 +292,10 @@
     const saveButton = document.getElementById('save-button');
     const avatarInput = document.getElementById('avatar');
 
-    // Следим за изменениями, чтобы активировать кнопку
     form.addEventListener('input', () => {
       saveButton.disabled = false;
     });
 
-    // Превью аватара
     avatarInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -166,13 +304,12 @@
       }
     });
 
-    // Отправка формы
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const msg = document.getElementById('message');
       msg.textContent = 'Сохранение...';
       msg.style.color = 'var(--text-muted)';
-      
+
       const formData = new FormData(form);
       try {
         const res = await fetch('/auth/profile', {
@@ -183,7 +320,6 @@
           msg.textContent = 'Успешно обновлено!';
           msg.style.color = 'var(--success)';
           saveButton.disabled = true;
-          // Можно обновить имя на странице сразу
           document.getElementById('display-username').innerText = document.getElementById('username').value;
         } else {
           const errorData = await res.json();
@@ -196,13 +332,14 @@
       }
     });
 
-    // Выход
     document.getElementById('logout-btn').addEventListener('click', async () => {
-      if(confirm('Вы уверены, что хотите выйти?')) {
-        await fetch('/auth/index', { method: 'POST' });
+      if (confirm('Вы уверены, что хотите выйти?')) {
+        // В auth.py эндпоинт /auth/logout
+        await fetch('/auth/logout', { method: 'POST' });
         location.href = '/';
       }
     });
   </script>
 </body>
+
 </html>
