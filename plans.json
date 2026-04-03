@@ -12,17 +12,17 @@
         "title": "Жиросжигающая Full Body",
         "description": "Круговая тренировка на все группы мыщц для разгона метаболизма.",
         "exercises": [
-          {"name": "Берпи", "sets": 3, "reps": "15 раз", "image_url": "/static/exercises/burpee.jpg"},
-          {"name": "Приседания с выпрыгиванием", "sets": 4, "reps": "20 раз", "image_url": "/static/exercises/jump_squat.jpg"},
-          {"name": "Скалолаз (Mountain Climbers)", "sets": 3, "reps": "45 сек", "image_url": "/static/exercises/climbers.jpg"}
+          {"name": "Берпи", "sets": 3, "reps": "15 раз", "image_url": "/static/uploads/inside1.jpg"},
+          {"name": "Приседания с выпрыгиванием", "sets": 4, "reps": "20 раз", "image_url": "/static/uploads/inside2.jpg"},
+          {"name": "Скалолаз (Mountain Climbers)", "sets": 3, "reps": "45 сек", "image_url": "/static/uploads/inside3.jpg"}
         ]
       },
       {
         "title": "Кардио и Пресс",
         "description": "Акцент на мышцы кора и выносливость.",
         "exercises": [
-          {"name": "Скручивания", "sets": 3, "reps": "25 раз", "image_url": "/static/exercises/crunches.jpg"},
-          {"name": "Планка", "sets": 3, "reps": "60 сек", "image_url": "/static/exercises/plank.jpg"}
+          {"name": "Скручивания", "sets": 3, "reps": "25 раз", "image_url": "/static/uploads/inside3.jpg"},
+          {"name": "Планка", "sets": 3, "reps": "60 сек", "image_url": "/static/uploads/inside1.jpg"}
         ]
       }
     ]
@@ -40,17 +40,17 @@
         "title": "День А: Грудь и Спина",
         "description": "Работа над антагонистами для максимального пампа.",
         "exercises": [
-          {"name": "Жим штанги лежа", "sets": 4, "reps": "8-10", "image_url": "/static/exercises/bench_press.jpg"},
-          {"name": "Тяга штанги в наклоне", "sets": 4, "reps": "10-12", "image_url": "/static/exercises/row.jpg"},
-          {"name": "Отжимания на брусьях", "sets": 3, "reps": "до отказа", "image_url": "/static/exercises/dips.jpg"}
+          {"name": "Жим штанги лежа", "sets": 4, "reps": "8-10", "image_url": "/static/uploads/inside1.jpg"},
+          {"name": "Тяга штанги в наклоне", "sets": 4, "reps": "10-12", "image_url": "/static/uploads/inside2.jpg"},
+          {"name": "Отжимания на брусьях", "sets": 3, "reps": "до отказа", "image_url": "/static/uploads/inside3.jpg"}
         ]
       },
       {
         "title": "День Б: Ноги и Плечи",
         "description": "Тяжелая база для стимуляции гормонального роста.",
         "exercises": [
-          {"name": "Приседания со штангой", "sets": 4, "reps": "8", "image_url": "/static/exercises/squats.jpg"},
-          {"name": "Армейский жим", "sets": 3, "reps": "10", "image_url": "/static/exercises/military_press.jpg"}
+          {"name": "Приседания со штангой", "sets": 4, "reps": "8", "image_url": "/static/uploads/inside1.jpg"},
+          {"name": "Армейский жим", "sets": 3, "reps": "10", "image_url": "/static/uploads/inside2.jpg"}
         ]
       }
     ]
