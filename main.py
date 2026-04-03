@@ -97,7 +97,7 @@ async def get_plan_page(request: Request, plan_id: str):
     plan_data = plans[plan_id]
     
     # Возвращаем новую страницу плана (создадим её на следующем шаге)
-    return templates.TemplateResponse("plan_page.html", {
+    return templates.TemplateResponse("plan_detail.html", {
         "request": request, 
         "plan": plan_data,
         "plan_id": plan_id
