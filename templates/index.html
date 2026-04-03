@@ -119,6 +119,8 @@
       border: 2px solid transparent;
       transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       cursor: pointer;
+      background-color: var(--bg);
+      background-repeat: no-repeat;
     }
 
     .plan-card:active {
@@ -133,7 +135,12 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, transparent 10%, rgba(15, 23, 42, 0.95) 100%);
+      /* Градиент начинается позже (с 30%) и плавно уходит в цвет основного фона сайта */
+      background: linear-gradient(180deg,
+          transparent 30%,
+          rgba(15, 23, 42, 0.7) 70%,
+          var(--bg) 100%);
+      z-index: 1;
     }
 
     .plan-info {
@@ -273,8 +280,7 @@
 
     <h2 class="section-title">🔥 Популярные планы</h2>
 
-    <div id="plan-weight_loss" class="plan-card"
-      style="background-image: url('/static/uploads/photo2.png');"
+    <div id="plan-weight_loss" class="plan-card" style="background-image: url('/static/uploads/photo2.png');"
       onclick="selectPlan('weight_loss')">
       <div class="unlock-badge">КУПЛЕНО</div>
       <div class="price-tag">990 $</div>
@@ -284,8 +290,7 @@
       </div>
     </div>
 
-    <div id="plan-muscle_gain" class="plan-card"
-      style="background-image: url('/static/uploads/photo1.png');"
+    <div id="plan-muscle_gain" class="plan-card" style="background-image: url('/static/uploads/photo1.png');"
       onclick="selectPlan('muscle_gain')">
       <div class="unlock-badge">КУПЛЕНО</div>
       <div class="price-tag">1490 $</div>
