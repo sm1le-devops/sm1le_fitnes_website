@@ -63,7 +63,22 @@ def is_username_valid(username: str) -> bool:
     return bool(re.match(r'^[a-zA-Z0-9_]+$', username))
 
 # --- Endpoints ---
-
+@router.get("/api/check-auth")
+async def check_auth(db: Session = Depends(get_db), username: str | None = Cookie(default=None)):
+    if not username:
+        return JSONResponse(status_code=401, content={"authenticated": False})
+    
+    user = db.query(models.User).filter(models.User.username == username).first()
+    if not user:
+        return JSONResponse(status_code=401, content={"authenticated": False})
+    
+    return JSONResponse(content={
+        "authenticated": True,
+        "user": {
+            "username": user.username,
+            "current_plan": getattr(user, 'current_plan', None)
+        }
+    })
 @router.post("/register")
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if not is_username_valid(user.username):
