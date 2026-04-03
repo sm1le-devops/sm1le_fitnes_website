@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_limiter import FastAPILimiter
 from redis.asyncio import Redis
 import os
+import json
 from database import Base, engine
 from routers import auth, auth_api, password_reset
 from fastapi.templating import Jinja2Templates
@@ -70,6 +71,37 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(auth_api.router)
 app.include_router(password_reset.router, prefix="/auth", tags=["Password Reset"])
+
+# --- Root page ---
+@app.get("/")
+async def root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+def get_plans_data():
+    """Функция для чтения JSON файла"""
+    try:
+        with open("plans.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        logging.error("Файл plans.json не найден в корне проекта!")
+        return {}
+    
+@app.get("/plans/{plan_id}")
+async def get_plan_page(request: Request, plan_id: str):
+    plans = get_plans_data()
+    
+    # Проверяем, есть ли такой план в JSON
+    if plan_id not in plans:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Программа тренировок не найдена")
+    
+    plan_data = plans[plan_id]
+    
+    # Возвращаем новую страницу плана (создадим её на следующем шаге)
+    return templates.TemplateResponse("plan_page.html", {
+        "request": request, 
+        "plan": plan_data,
+        "plan_id": plan_id
+    })
 
 # --- Root page ---
 @app.get("/")

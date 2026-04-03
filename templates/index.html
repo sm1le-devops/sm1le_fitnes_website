@@ -399,11 +399,22 @@
 
     function selectPlan(planId) {
       if (window.navigator.vibrate) window.navigator.vibrate(10);
-      // Теперь переменная isAuthorized будет актуальной
+
+      // 1. Проверяем, авторизован ли пользователь
       if (isAuthorized) {
-        window.location.href = "/auth/welcome";
+        // Если авторизован, проверяем через DOM, куплен ли уже этот план
+        const activeCard = document.getElementById(`plan-${planId}`);
+        if (activeCard && activeCard.classList.contains('unlocked')) {
+          // Если план уже куплен (есть класс unlocked), отправляем в личный кабинет/тренировки
+          window.location.href = "/auth/welcome";
+        } else {
+          // Если авторизован, но план не куплен — показываем страницу с деталями и кнопкой покупки
+          window.location.href = `/plans/${planId}`;
+        }
       } else {
-        window.location.href = "/auth/register";
+        // 2. Если гость — всё равно показываем страницу плана, 
+        // чтобы он мог прочитать описание перед регистрацией
+        window.location.href = `/plans/${planId}`;
       }
     }
   </script>
