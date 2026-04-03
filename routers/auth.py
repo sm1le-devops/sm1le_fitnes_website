@@ -1,5 +1,6 @@
 import sys
 import os, re
+import json
 from typing import Optional
 from datetime import datetime
 
@@ -24,11 +25,22 @@ load_dotenv()
 
 # --- CSRF Защита ---
 def get_csrf_serializer():
-    secret = os.getenv("CSRF_SECRET", "dev-secret")
+    # Используй переменную окружения или дефолтное значение
+    secret = os.getenv("CSRF_SECRET", "dev-secret-key-123")
     return URLSafeTimedSerializer(secret)
 
 def generate_csrf_token():
     return get_csrf_serializer().dumps("token")
+
+# ТА САМАЯ ФУНКЦИЯ, КОТОРОЙ НЕ ХВАТАЛО
+def validate_csrf_token(token: str):
+    serializer = get_csrf_serializer()
+    try:
+        # Проверяем токен. Если он валиден и не просрочен (1 час), вернет True
+        serializer.loads(token, max_age=3600)
+        return True
+    except Exception:
+        return False
 
 # --- Схемы данных ---
 class LoginRequest(BaseModel):
@@ -48,23 +60,6 @@ def is_username_valid(username: str) -> bool:
 
 # --- API Эндпоинты ---
 
-@router.get("/api/check-auth")
-async def check_auth(db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
-    if not username:
-        return JSONResponse(status_code=401, content={"authenticated": False})
-    
-    user = db.query(models.User).filter(models.User.username == username).first()
-    if not user:
-        return JSONResponse(status_code=401, content={"authenticated": False})
-    
-    return {
-        "authenticated": True,
-        "user": {
-            "username": user.username,
-            "purchased_plans": user.purchased_plans.split(",") if user.purchased_plans else []
-        }
-    }
-
 @router.post("/register")
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if not is_username_valid(user.username):
@@ -80,7 +75,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
         username=user.username,
         email=user.email,
         hashed_password=get_password_hash(user.password),
-        purchased_plans="" # Изначально планов нет
+        purchased_plans="" 
     )
     db.add(new_user)
     db.commit()
@@ -88,9 +83,9 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login")
 async def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    # Проверка CSRF
+    # Проверка CSRF через новую функцию
     cookie_csrf = request.cookies.get("csrf_token")
-    if not cookie_csrf or data.csrf_token != cookie_csrf:
+    if not cookie_csrf or not validate_csrf_token(data.csrf_token):
          raise HTTPException(status_code=403, detail="Ошибка безопасности (CSRF)")
 
     db_user = db.query(models.User).filter(models.User.username == data.username).first()
@@ -98,8 +93,10 @@ async def login(data: LoginRequest, request: Request, db: Session = Depends(get_
         raise HTTPException(status_code=401, detail="Неверный логин или пароль")
 
     response = JSONResponse(content={"redirect_url": "/auth/welcome"})
-    # Ставим куки сессии
+    
+    # Ставим куки
     response.set_cookie(key="username", value=db_user.username, httponly=False, secure=True, samesite="lax", path="/", max_age=86400)
+    # Генерируем новый токен для следующей сессии
     response.set_cookie(key="csrf_token", value=generate_csrf_token(), httponly=False, secure=True, samesite="lax", path="/")
     return response
 
@@ -118,13 +115,15 @@ def welcome(request: Request, db: Session = Depends(get_db), username: Optional[
         return RedirectResponse(url="/auth/login", status_code=303)
     
     user = db.query(models.User).filter(models.User.username == username).first()
-    if not user: return RedirectResponse(url="/auth/register", status_code=303)
+    if not user: 
+        return RedirectResponse(url="/auth/register", status_code=303)
         
     return templates.TemplateResponse("welcome.html", {"request": request, "current_user": user})
 
 @router.get("/profile", response_class=HTMLResponse)
 async def get_profile_page(request: Request, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
-    if not username: return RedirectResponse(url="/auth/login", status_code=303)
+    if not username: 
+        return RedirectResponse(url="/auth/login", status_code=303)
     user = db.query(models.User).filter(models.User.username == username).first()
     return templates.TemplateResponse("profile.html", {"request": request, "user": user})
 
@@ -140,12 +139,13 @@ async def update_profile(
     current_username: str = Cookie(..., alias="username")
 ):
     # Валидация CSRF
-    if (await request.form()).get("csrf_token") != request.cookies.get("csrf_token"):
+    form_data = await request.form()
+    csrf_from_form = form_data.get("csrf_token")
+    if not validate_csrf_token(csrf_from_form):
         raise HTTPException(status_code=403, detail="CSRF invalid")
 
     user = db.query(models.User).filter(models.User.username == current_username).first()
     
-    # Обновляем поля
     if username and username != current_username:
         if db.query(models.User).filter(models.User.username == username).first():
             raise HTTPException(status_code=400, detail="Логин занят")
