@@ -1,75 +1,178 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ plan.title if plan else 'Курс' }}</title>
     <style>
-        :root { --bg: #0F172A; --card: #1E293B; --accent: #F97316; --text: #F8FAFC; --muted: #94A3B8; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; padding-bottom: 50px; }
-        .header { padding: 20px; background: var(--card); border-bottom: 1px solid #2D3748; }
-        .content { padding: 15px; }
-        .day-btn { padding: 10px 15px; margin-right: 8px; background: var(--card); border: 1px solid #334155; color: white; border-radius: 8px; cursor: pointer; }
-        .day-btn.active { background: var(--accent); border-color: var(--accent); }
-        .exercise-card { background: var(--card); border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #334155; }
-        .video { width: 100%; aspect-ratio: 16/9; margin-top: 10px; border-radius: 8px; }
+        :root {
+            --bg: #0F172A;
+            --card: #1E293B;
+            --accent: #F97316;
+            --text: #F8FAFC;
+            --muted: #94A3B8;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: sans-serif;
+            padding-bottom: 50px;
+        }
+
+        .header {
+            padding: 20px;
+            background: var(--card);
+            border-bottom: 1px solid #2D3748;
+        }
+
+        .header h1 {
+            margin: 10px 0 0 0;
+            font-size: 1.4rem;
+            color: var(--accent);
+        }
+
+        .content {
+            padding: 15px;
+        }
+
+        .day-selector {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding-bottom: 15px;
+            scrollbar-width: none;
+        }
+
+        .day-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        .day-btn {
+            padding: 10px 20px;
+            background: var(--card);
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .day-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            font-weight: bold;
+        }
+
+        .exercise-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #334155;
+        }
+
+        .exercise-card h3 {
+            margin-top: 0;
+            color: var(--text);
+        }
+
+        .video {
+            width: 100%;
+            aspect-ratio: 16/9;
+            margin-top: 15px;
+            border-radius: 8px;
+            border: none;
+        }
+
+        .meta {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="header">
-    <a href="/auth/welcome" style="color: var(--muted); text-decoration: none;">← Назад</a>
-    <h1>{{ plan.title if plan else 'План не найден' }}</h1>
-</div>
+    <div class="header">
+        <a href="/auth/welcome" style="color: var(--muted); text-decoration: none; font-size: 0.9rem;">← К
+            программам</a>
+        <h1>{{ plan.title if plan else 'План не найден' }}</h1>
+    </div>
 
-<div class="content">
-    <div id="daySelector">
-        {% if plan and plan.days %}
+    <div class="content">
+        <div class="day-selector" id="daySelector">
+            {% if plan and plan.days %}
             {% for day in plan.days %}
             <button class="day-btn {% if loop.first %}active{% endif %}" onclick="showDay({{ loop.index0 }})">
                 День {{ loop.index }}
             </button>
             {% endfor %}
-        {% endif %}
+            {% endif %}
+        </div>
+
+        <div id="exerciseList">
+        </div>
     </div>
 
-    <div id="exerciseList"></div>
-</div>
+    <script>
+        // Безопасно передаем данные из Python в JS
+        const planData = {{ plan | tojson | safe if plan else 'null' }};
 
-<script>
-    // Получаем данные. Если plan пришел пустой, ставим пустой объект.
-    const planData = {{ plan | tojson | safe if plan else '{}' }};
-    
-    function showDay(index) {
-        const container = document.getElementById('exerciseList');
-        
-        // Проверки на наличие данных
-        if (!planData.days || !planData.days[index]) {
-            container.innerHTML = `<p style="color:var(--muted)">Данные для этого дня отсутствуют в plans.json</p>`;
-            return;
-        }
+        function showDay(index) {
+            const container = document.getElementById('exerciseList');
 
-        document.querySelectorAll('.day-btn').forEach((b, i) => b.classList.toggle('active', i === index));
+            if (!planData || !planData.days || !planData.days[index]) {
+                container.innerHTML = `<p style="color:var(--muted); text-align:center; margin-top:30px;">Данные для этого дня еще не заполнены.</p>`;
+                return;
+            }
 
-        const day = planData.days[index];
-        container.innerHTML = `
-            <h2>${day.title}</h2>
-            <p style="color: var(--muted)">${day.description || ''}</p>
+            // Обновляем активную кнопку
+            document.querySelectorAll('.day-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+
+            const day = planData.days[index];
+
+            // Отрисовка контента
+            container.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <h2 style="margin-bottom: 5px;">${day.title}</h2>
+                <p style="color: var(--muted); margin: 0;">${day.description || ''}</p>
+            </div>
             ${(day.exercises || []).map(ex => `
                 <div class="exercise-card">
                     <h3>${ex.name}</h3>
-                    <p style="color: var(--muted)">${ex.sets} подходов по ${ex.reps} раз</p>
-                    ${ex.video_id ? `<iframe class="video" src="https://www.youtube.com/embed/${ex.video_id}" frameborder="0" allowfullscreen></iframe>` : ''}
+                    <div class="meta">
+                        <span>🔄 ${ex.sets} подходов</span> • 
+                        <span>🔢 ${ex.reps} повторений</span>
+                    </div>
+                    ${ex.video_id ? `
+                        <iframe class="video" 
+                                src="https://www.youtube.com/embed/${ex.video_id}" 
+                                allowfullscreen>
+                        </iframe>` : ''}
                 </div>
             `).join('')}
         `;
-    }
 
-    // Запуск первого дня
-    document.addEventListener('DOMContentLoaded', () => {
-        if (planData && planData.days) showDay(0);
-        else document.getElementById('exerciseList').innerHTML = "Ошибка: В файле plans.json нет раздела 'days'.";
-    });
-</script>
+            // Скролл вверх при смене дня
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Инициализация первого дня
+        document.addEventListener('DOMContentLoaded', () => {
+            if (planData && planData.days && planData.days.length > 0) {
+                showDay(0);
+            } else {
+                document.getElementById('exerciseList').innerHTML =
+                    `<p style="color:var(--muted); text-align:center; margin-top:30px;">В этом курсе пока нет тренировок.</p>`;
+            }
+        });
+    </script>
 </body>
+
 </html>

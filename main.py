@@ -118,3 +118,28 @@ async def get_course_view(
     return templates.TemplateResponse("course_view.html", {
         "request": request, "plan": plans.get(plan_id), "plan_id": plan_id
     })
+    
+@app.get("/checkout/{plan_id}")
+async def fake_checkout(
+    plan_id: str, 
+    db: Session = Depends(get_db), 
+    username: Optional[str] = Cookie(None)
+):
+    # 1. Проверяем, залогинен ли юзер
+    if not username:
+        return RedirectResponse(url="/auth/login", status_code=303)
+
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        return RedirectResponse(url="/auth/register", status_code=303)
+
+    # 2. Добавляем план в список купленных (если его там еще нет)
+    current_plans = user.purchased_plans.split(",") if user.purchased_plans else []
+    
+    if plan_id not in current_plans:
+        current_plans.append(plan_id)
+        user.purchased_plans = ",".join(filter(None, current_plans))
+        db.commit()
+
+    # 3. Редиректим сразу на страницу курса
+    return RedirectResponse(url=f"/course/{plan_id}", status_code=303)
