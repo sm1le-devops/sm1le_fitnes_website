@@ -121,6 +121,8 @@
       cursor: pointer;
       background-color: var(--bg);
       background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center top;
     }
 
     .plan-card:active {
@@ -135,10 +137,11 @@
       content: "";
       position: absolute;
       inset: 0;
-      /* Градиент начинается позже (с 30%) и плавно уходит в цвет основного фона сайта */
+      /* Увеличиваем плотность затемнения снизу */
       background: linear-gradient(180deg,
-          transparent 30%,
-          rgba(15, 23, 42, 0.7) 70%,
+          transparent 0%,
+          rgba(15, 23, 42, 0) 40%,
+          rgba(15, 23, 42, 0.8) 75%,
           var(--bg) 100%);
       z-index: 1;
     }
