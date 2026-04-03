@@ -83,8 +83,21 @@ def get_plans_data():
 # --- Routes ---
 
 @app.get("/", response_class=HTMLResponse)
-async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def root(request: Request, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
+    user_data = None
+    if username:
+        user = db.query(User).filter(User.username == username).first()
+        if user:
+            # Превращаем объект пользователя в словарь для шаблона
+            user_data = {
+                "username": user.username,
+                "purchased_plans": user.purchased_plans.split(",") if user.purchased_plans else []
+            }
+    
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "user": user_data
+    })
 
 @app.get("/plans/{plan_id}", response_class=HTMLResponse)
 async def get_plan_page(request: Request, plan_id: str):
@@ -102,6 +115,7 @@ async def get_course_view(
     db: Session = Depends(get_db), 
     username: Optional[str] = Cookie(None)
 ):
+    # 1. Проверка авторизации
     if not username:
         return RedirectResponse(url="/auth/login", status_code=303)
     
@@ -109,14 +123,29 @@ async def get_course_view(
     if not user:
         return RedirectResponse(url="/auth/register", status_code=303)
     
-    # Проверка купленных планов
+    # 2. Проверка доступа (куплен ли план)
     purchased = user.purchased_plans.split(",") if user.purchased_plans else []
     if plan_id not in purchased:
+        # Если не куплено, отправляем на страницу описания с ошибкой
         return RedirectResponse(url=f"/plans/{plan_id}?error=not_paid", status_code=303)
     
+    # 3. Получение данных из plans.json
     plans = get_plans_data()
+    plan_info = plans.get(plan_id)
+
+    if not plan_info:
+        # Если id в ссылке есть, а в json нет — выкидываем 404
+        raise HTTPException(status_code=404, detail=f"План '{plan_id}' не найден в базе данных (plans.json)")
+
+    # 4. Подготовка данных для JavaScript
+    # Мы создаем JSON-строку заранее, чтобы Jinja2 не сломала кавычки
+    plan_json_json = json.dumps(plan_info, ensure_ascii=False)
+
     return templates.TemplateResponse("course_view.html", {
-        "request": request, "plan": plans.get(plan_id), "plan_id": plan_id
+        "request": request,
+        "plan": plan_info,             # Для обычного вывода заголовков через {{ plan.title }}
+        "plan_json_safe": plan_json_json, # Специально для скрипта внизу страницы
+        "plan_id": plan_id
     })
     
 @app.get("/checkout/{plan_id}")

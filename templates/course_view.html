@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{{ plan.title if plan else 'Курс' }}</title>
+    <title>{{ plan.title if plan else 'Курс' }} — sm1le.fitness</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
     <style>
         :root {
             --bg: #0F172A;
@@ -14,40 +14,61 @@
             --muted: #94A3B8;
         }
 
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             margin: 0;
             background: var(--bg);
             color: var(--text);
-            font-family: sans-serif;
-            padding-bottom: 50px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding-bottom: 60px;
+            overflow-x: hidden;
         }
 
         .header {
-            padding: 20px;
+            padding: 20px 16px;
             background: var(--card);
             border-bottom: 1px solid #2D3748;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .header h1 {
-            margin: 10px 0 0 0;
-            font-size: 1.4rem;
+            margin: 8px 0 0 0;
+            font-size: 1.2rem;
             color: var(--accent);
+            font-weight: 800;
+        }
+
+        .back-link {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .content {
-            padding: 15px;
+            padding: 16px;
         }
 
+        /* Селектор дней (скроллится по горизонтали) */
         .day-selector {
             display: flex;
             overflow-x: auto;
             gap: 10px;
-            padding-bottom: 15px;
-            scrollbar-width: none;
+            padding-bottom: 16px;
+            margin-bottom: 10px;
+            scrollbar-width: none; /* Firefox */
         }
 
         .day-selector::-webkit-scrollbar {
-            display: none;
+            display: none; /* Chrome/Safari */
         }
 
         .day-btn {
@@ -55,124 +76,181 @@
             background: var(--card);
             border: 1px solid #334155;
             color: white;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             white-space: nowrap;
             flex-shrink: 0;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: 0.2s;
         }
 
         .day-btn.active {
             background: var(--accent);
             border-color: var(--accent);
-            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
         }
 
+        /* Заголовок текущего дня */
+        .day-header {
+            margin-bottom: 24px;
+        }
+
+        .day-header h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin: 0 0 4px 0;
+        }
+
+        .day-header p {
+            color: var(--muted);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        /* Карточка упражнения */
         .exercise-card {
             background: var(--card);
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 15px;
-            border: 1px solid #334155;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .exercise-card h3 {
-            margin-top: 0;
+            margin: 0 0 8px 0;
+            font-size: 1.15rem;
+            font-weight: 700;
             color: var(--text);
         }
 
-        .video {
-            width: 100%;
-            aspect-ratio: 16/9;
-            margin-top: 15px;
-            border-radius: 8px;
-            border: none;
+        .meta {
+            display: flex;
+            gap: 12px;
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            font-weight: 500;
         }
 
-        .meta {
-            color: var(--muted);
-            font-size: 0.9rem;
+        /* Стиль для картинки упражнения вместо видео */
+        .exercise-image-container {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            background: #0F172A; /* Фон пока грузится */
         }
+
+        .exercise-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover; /* Чтобы картинки разного размера смотрелись аккуратно */
+            max-height: 300px; /* Ограничим высоту на мобильных */
+        }
+
     </style>
 </head>
-
 <body>
 
     <div class="header">
-        <a href="/auth/welcome" style="color: var(--muted); text-decoration: none; font-size: 0.9rem;">← К
-            программам</a>
-        <h1>{{ plan.title if plan else 'План не найден' }}</h1>
+        <a href="/auth/welcome" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            К программам
+        </a>
+        <h1>{{ plan.title if plan else 'Программа' }}</h1>
     </div>
 
     <div class="content">
         <div class="day-selector" id="daySelector">
             {% if plan and plan.days %}
-            {% for day in plan.days %}
-            <button class="day-btn {% if loop.first %}active{% endif %}" onclick="showDay({{ loop.index0 }})">
-                День {{ loop.index }}
-            </button>
-            {% endfor %}
+                {% for day in plan.days %}
+                <button class="day-btn {% if loop.first %}active{% endif %}" onclick="showDay({{ loop.index0 }})">
+                    День {{ loop.index }}
+                </button>
+                {% endfor %}
             {% endif %}
         </div>
 
         <div id="exerciseList">
-        </div>
+            </div>
     </div>
 
     <script>
-        // Безопасно передаем данные из Python в JS
-        const planData = {{ plan | tojson | safe if plan else 'null' }};
+        // Получаем данные безопасным способом через серверный фильтр tojson
+        const planData = {% if plan_json_safe %}{{ plan_json_safe | safe }}{% else %}null{% endif %};
 
         function showDay(index) {
             const container = document.getElementById('exerciseList');
-
+            
+            // Проверки на наличие данных, чтобы избежать "черного экрана"
             if (!planData || !planData.days || !planData.days[index]) {
-                container.innerHTML = `<p style="color:var(--muted); text-align:center; margin-top:30px;">Данные для этого дня еще не заполнены.</p>`;
+                container.innerHTML = `
+                    <div style="text-align:center; padding: 40px; color: var(--muted);">
+                        <h3>Скоро здесь будет тренировка</h3>
+                        <p style="font-size:0.9rem;">Данные для этого дня еще не заполнены.</p>
+                    </div>`;
                 return;
             }
 
-            // Обновляем активную кнопку
+            // Подсвечиваем активную кнопку дня
             document.querySelectorAll('.day-btn').forEach((btn, i) => {
                 btn.classList.toggle('active', i === index);
             });
 
             const day = planData.days[index];
-
-            // Отрисовка контента
-            container.innerHTML = `
-            <div style="margin-bottom: 20px;">
-                <h2 style="margin-bottom: 5px;">${day.title}</h2>
-                <p style="color: var(--muted); margin: 0;">${day.description || ''}</p>
-            </div>
-            ${(day.exercises || []).map(ex => `
-                <div class="exercise-card">
-                    <h3>${ex.name}</h3>
-                    <div class="meta">
-                        <span>🔄 ${ex.sets} подходов</span> • 
-                        <span>🔢 ${ex.reps} повторений</span>
-                    </div>
-                    ${ex.video_id ? `
-                        <iframe class="video" 
-                                src="https://www.youtube.com/embed/${ex.video_id}" 
-                                allowfullscreen>
-                        </iframe>` : ''}
+            
+            // Заголовок дня и Описание
+            let htmlContent = `
+                <div class="day-header">
+                    <h2>${day.title}</h2>
+                    <p>${day.description || ''}</p>
                 </div>
-            `).join('')}
-        `;
+            `;
 
-            // Скролл вверх при смене дня
+            // Цикл по упражнениям (ОБНОВЛЕНО: Используем картинки)
+            if (day.exercises && day.exercises.length > 0) {
+                htmlContent += day.exercises.map(ex => `
+                    <div class="exercise-card">
+                        <h3>${ex.name}</h3>
+                        <div class="meta">
+                            <span>🔄 ${ex.sets} подходов</span>
+                            <span>🔢 ${ex.reps} повторений</span>
+                        </div>
+                        
+                        ${ex.image_url ? `
+                            <div class="exercise-image-container">
+                                <img src="${ex.image_url}" alt="${ex.name}" class="exercise-image" loading="lazy">
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } else {
+                htmlContent += `<p style="text-align:center; color: var(--muted); padding: 20px;">В этом дне пока нет упражнений.</p>`;
+            }
+
+            // Записываем готовый HTML в контейнер
+            container.innerHTML = htmlContent;
+            
+            // Скроллим страницу вверх при смене дня (удобно на мобильных)
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Инициализация первого дня
+        // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', () => {
             if (planData && planData.days && planData.days.length > 0) {
+                // Показываем первый день по умолчанию
                 showDay(0);
             } else {
-                document.getElementById('exerciseList').innerHTML =
-                    `<p style="color:var(--muted); text-align:center; margin-top:30px;">В этом курсе пока нет тренировок.</p>`;
+                document.getElementById('exerciseList').innerHTML = `
+                    <div style="text-align:center; padding: 40px; color: var(--muted);">
+                        <h3>План не найден</h3>
+                        <p style="font-size:0.9rem;">Ошибка загрузки данных или файл plans.json пуст.</p>
+                    </div>`;
             }
         });
     </script>
 </body>
-
 </html>
