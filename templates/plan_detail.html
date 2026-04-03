@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ plan.title }} — sm1le.fitness</title>
-    <link rel="icon" type="image/png" href="/static/favicon.png?v=6">
+    <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
+    <link rel="apple-touch-icon" href="/static/favicon.png">
+    <link rel="icon" sizes="192x192" href="/static/favicon.png">
     <style>
         :root {
             --bg: #0F172A;
@@ -33,14 +36,16 @@
         .hero {
             position: relative;
             width: 100%;
-            height: 35vh; 
+            height: 35vh;
             background: url('{{ plan.image }}') center/cover no-repeat;
             transition: height 0.3s ease;
         }
 
         /* На планшетах и ПК фото может быть больше */
         @media (min-width: 768px) {
-            .hero { height: 50vh; }
+            .hero {
+                height: 50vh;
+            }
         }
 
         /* Плотный градиент для исключения щелей */
@@ -48,11 +53,11 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, 
-                transparent 0%, 
-                rgba(15, 23, 42, 0) 50%, 
-                rgba(15, 23, 42, 0.8) 80%, 
-                var(--bg) 100%);
+            background: linear-gradient(180deg,
+                    transparent 0%,
+                    rgba(15, 23, 42, 0) 50%,
+                    rgba(15, 23, 42, 0.8) 80%,
+                    var(--bg) 100%);
         }
 
         .back-btn {
@@ -70,14 +75,14 @@
             justify-content: center;
             color: white;
             text-decoration: none;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .main-content {
             position: relative;
             padding: 0 20px 120px 20px;
             /* Наплыв на фото увеличен для плотности */
-            margin-top: -60px; 
+            margin-top: -60px;
             z-index: 2;
         }
 
@@ -120,7 +125,7 @@
             background: var(--card);
             padding: 12px 16px;
             border-radius: 18px;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .info-card span {
@@ -184,25 +189,29 @@
         }
 
         .price-label {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             padding: 4px 10px;
             border-radius: 10px;
             font-size: 14px;
         }
     </style>
 </head>
+
 <body>
 
     <div class="hero">
         <a href="/" class="back-btn">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+            </svg>
         </a>
     </div>
 
     <div class="main-content">
         <div class="category-tag">План тренировок</div>
         <h1>{{ plan.title }}</h1>
-        
+
         <p class="description">{{ plan.full_info }}</p>
 
         <div class="info-grid">
@@ -240,4 +249,5 @@
     </div>
 
 </body>
+
 </html>

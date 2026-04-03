@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ plan.title if plan else 'Курс' }} — Обучение</title>
+    <style>
+        :root {
+            --bg: #0F172A;
+            --card: #1E293B;
+            --accent: #F97316;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, system-ui, sans-serif;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            padding: 20px;
+            background: var(--card);
+            border-bottom: 1px solid #2D3748;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 { margin: 0; font-size: 1.2rem; color: var(--accent); }
+
+        .video-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            margin-bottom: 20px;
+        }
+
+        .content { padding: 15px; }
+
+        .day-selector {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 15px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .day-selector::-webkit-scrollbar { display: none; }
+
+        .day-btn {
+            padding: 10px 20px;
+            background: var(--card);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            white-space: nowrap;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 500;
+        }
+
+        .day-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .exercise-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #334155;
+        }
+
+        .exercise-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
+        .meta { display: flex; gap: 15px; color: var(--text-muted); font-size: 0.9rem; }
+        
+        .nav-back {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/auth/welcome" class="nav-back">← Назад к планам</a>
+    <h1>{{ plan.title if plan else 'Загрузка...' }}</h1>
+</div>
+
+<div class="content">
+    <div class="day-selector" id="daySelector">
+        {% if plan and plan.days %}
+            {% for day in plan.days %}
+            <button class="day-btn {% if loop.first %}active{% endif %}" onclick="showDay({{ loop.index0 }})">
+                День {{ loop.index }}
+            </button>
+            {% endfor %}
+        {% else %}
+            <p style="color: var(--text-muted)">Дни тренировок не найдены в plans.json</p>
+        {% endif %}
+    </div>
+
+    <div id="exerciseList">
+        </div>
+</div>
+
+<script>
+    // Получаем данные из Python через кастомный фильтр tojson
+    // Если данных нет, используем пустой объект, чтобы JS не упал
+    const planData = {{ plan | tojson | safe if plan else 'null' }};
+    
+    console.log("Данные курса:", planData);
+
+    function showDay(index) {
+        if (!planData || !planData.days || !planData.days[index]) {
+            document.getElementById('exerciseList').innerHTML = "<p>Упражнения для этого дня еще не добавлены.</p>";
+            return;
+        }
+
+        // Подсвечиваем активную кнопку
+        document.querySelectorAll('.day-btn').forEach((btn, i) => {
+            btn.classList.toggle('active', i === index);
+        });
+
+        const day = planData.days[index];
+        const container = document.getElementById('exerciseList');
+        
+        container.innerHTML = `
+            <h2 style="margin-top: 0;">${day.title}</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">${day.description || ''}</p>
+            ${day.exercises && day.exercises.length > 0 ? day.exercises.map(ex => `
+                <div class="exercise-card">
+                    <h3>${ex.name}</h3>
+                    <div class="meta">
+                        <span>🔄 ${ex.sets} подходов</span>
+                        <span>🔢 ${ex.reps} повторений</span>
+                    </div>
+                    ${ex.video_id ? `
+                    <div class="video-container" style="margin-top:15px; border-radius: 12px; overflow: hidden;">
+                        <iframe width="100%" height="100%" 
+                                src="https://www.youtube.com/embed/${ex.video_id}" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                        </iframe>
+                    </div>` : ''}
+                </div>
+            `).join('') : '<p>В этом дне пока нет упражнений.</p>'}
+        `;
+    }
+
+    // Инициализация при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+        if (planData) {
+            showDay(0);
+        }
+    });
+</script>
+
+</body>
+</html>

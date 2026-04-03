@@ -1,62 +1,60 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi_limiter import FastAPILimiter
-from redis.asyncio import Redis
 import os
 import json
-from database import Base, engine
-from routers import auth, auth_api, password_reset
-from fastapi.templating import Jinja2Templates
 import logging
-from models import User
+from typing import Optional
 
+from fastapi import FastAPI, Request, Depends, Cookie, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi_limiter import FastAPILimiter
+
+from redis.asyncio import Redis
+from sqlalchemy.orm import Session
+
+# Импорты ваших модулей
+from database import Base, engine, get_db
+from models import User
+from routers import auth, auth_api, password_reset
+
+# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
+# Создание таблиц
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+templates.env.filters["tojson"] = lambda data: json.dumps(data, ensure_ascii=False)
 
-# --- Redis init ---
-redis_client: Redis | None = None
-
+# --- Startup/Shutdown ---
 @app.on_event("startup")
 async def startup():
-    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
-    redis_client = Redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
-    app.state.redis = redis_client  # сохраняем в app.state
-    await FastAPILimiter.init(redis_client)
-
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    try:
+        redis_client = Redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
+        app.state.redis = redis_client
+        await FastAPILimiter.init(redis_client)
+        logging.info("Redis подключен.")
+    except Exception as e:
+        logging.error(f"Redis не доступен: {e}")
 
 @app.on_event("shutdown")
 async def shutdown():
-    redis: Redis = app.state.redis
-    if redis:
-        await redis.close()
-
+    if hasattr(app.state, "redis"):
+        await app.state.redis.close()
 
 # --- CORS ---
-origins = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000"
-]
+origins = ["http://localhost:8000", "http://127.0.0.1:8000"]
+RENDER_URL = os.getenv("RENDER_EXTERNAL_URL")
+if RENDER_URL:
+    clean_url = RENDER_URL.rstrip('/')
+    origins.extend([clean_url, clean_url.replace("https://", "http://")])
 
-# Добавляем Render URL в список ДО инициализации мидлвары
-RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL")
-if RENDER_EXTERNAL_URL:
-    origins.append(RENDER_EXTERNAL_URL)
-    # Удаляем лишний слеш в конце, если он есть, т.к. CORS чувствителен к нему
-    clean_url = RENDER_EXTERNAL_URL.rstrip('/')
-    if clean_url not in origins:
-        origins.append(clean_url)
-    # На всякий случай вариант с http
-    origins.append(clean_url.replace("https://", "http://"))
-
-# Теперь добавляем мидлвару ОДИН РАЗ с полным списком
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -64,7 +62,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# --- Static files ---
+
+# --- Static ---
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # --- Routers ---
@@ -72,38 +71,50 @@ app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(auth_api.router)
 app.include_router(password_reset.router, prefix="/auth", tags=["Password Reset"])
 
-# --- Root page ---
-@app.get("/")
-async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+# --- Logic ---
 def get_plans_data():
-    """Функция для чтения JSON файла"""
     try:
         with open("plans.json", "r", encoding="utf-8") as f:
             return json.load(f)
-    except FileNotFoundError:
-        logging.error("Файл plans.json не найден в корне проекта!")
+    except Exception as e:
+        logging.error(f"Ошибка JSON: {e}")
         return {}
-    
-@app.get("/plans/{plan_id}")
-async def get_plan_page(request: Request, plan_id: str):
-    plans = get_plans_data()
-    
-    # Проверяем, есть ли такой план в JSON
-    if plan_id not in plans:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Программа тренировок не найдена")
-    
-    plan_data = plans[plan_id]
-    
-    # Возвращаем новую страницу плана (создадим её на следующем шаге)
-    return templates.TemplateResponse("plan_detail.html", {
-        "request": request, 
-        "plan": plan_data,
-        "plan_id": plan_id
-    })
 
-# --- Root page ---
-@app.get("/")
+# --- Routes ---
+
+@app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/plans/{plan_id}", response_class=HTMLResponse)
+async def get_plan_page(request: Request, plan_id: str):
+    plans = get_plans_data()
+    if plan_id not in plans:
+        raise HTTPException(status_code=404, detail="План не найден")
+    return templates.TemplateResponse("plan_detail.html", {
+        "request": request, "plan": plans[plan_id], "plan_id": plan_id
+    })
+
+@app.get("/course/{plan_id}", response_class=HTMLResponse)
+async def get_course_view(
+    request: Request, 
+    plan_id: str, 
+    db: Session = Depends(get_db), 
+    username: Optional[str] = Cookie(None)
+):
+    if not username:
+        return RedirectResponse(url="/auth/login", status_code=303)
+    
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        return RedirectResponse(url="/auth/register", status_code=303)
+    
+    # Проверка купленных планов
+    purchased = user.purchased_plans.split(",") if user.purchased_plans else []
+    if plan_id not in purchased:
+        return RedirectResponse(url=f"/plans/{plan_id}?error=not_paid", status_code=303)
+    
+    plans = get_plans_data()
+    return templates.TemplateResponse("course_view.html", {
+        "request": request, "plan": plans.get(plan_id), "plan_id": plan_id
+    })
