@@ -32,7 +32,6 @@
             overflow-x: hidden;
         }
 
-        /* Шапка с картинкой: уменьшена высота для мобильных */
         .hero {
             position: relative;
             width: 100%;
@@ -41,23 +40,15 @@
             transition: height 0.3s ease;
         }
 
-        /* На планшетах и ПК фото может быть больше */
         @media (min-width: 768px) {
-            .hero {
-                height: 50vh;
-            }
+            .hero { height: 50vh; }
         }
 
-        /* Плотный градиент для исключения щелей */
         .hero::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg,
-                    transparent 0%,
-                    rgba(15, 23, 42, 0) 50%,
-                    rgba(15, 23, 42, 0.8) 80%,
-                    var(--bg) 100%);
+            background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0) 50%, rgba(15, 23, 42, 0.8) 80%, var(--bg) 100%);
         }
 
         .back-btn {
@@ -81,7 +72,6 @@
         .main-content {
             position: relative;
             padding: 0 20px 120px 20px;
-            /* Наплыв на фото увеличен для плотности */
             margin-top: -60px;
             z-index: 2;
         }
@@ -113,7 +103,6 @@
             margin-bottom: 20px;
         }
 
-        /* Компактная сетка параметров */
         .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -142,23 +131,6 @@
             color: var(--text);
         }
 
-        h3 {
-            font-size: 18px;
-            margin: 24px 0 12px 0;
-        }
-
-        .features-list {
-            color: var(--text-muted);
-            padding-left: 20px;
-            margin: 0;
-        }
-
-        .features-list li {
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        /* Фиксированная кнопка внизу */
         .action-bar {
             position: fixed;
             bottom: 0;
@@ -169,24 +141,25 @@
             z-index: 100;
         }
 
+        /* Изменено на button для работы с JS */
         .buy-button {
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: var(--accent);
             color: white;
-            text-decoration: none;
+            border: none;
+            width: 100%;
             padding: 16px 20px;
             border-radius: 20px;
             font-weight: 800;
             font-size: 16px;
             box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4);
+            cursor: pointer;
             transition: transform 0.2s;
         }
 
-        .buy-button:active {
-            transform: scale(0.96);
-        }
+        .buy-button:active { transform: scale(0.96); }
 
         .price-label {
             background: rgba(255, 255, 255, 0.2);
@@ -211,30 +184,17 @@
     <div class="main-content">
         <div class="category-tag">План тренировок</div>
         <h1>{{ plan.title }}</h1>
-
         <p class="description">{{ plan.full_info }}</p>
 
         <div class="info-grid">
-            <div class="info-card">
-                <span>Срок</span>
-                <strong>{{ plan.duration }}</strong>
-            </div>
-            <div class="info-card">
-                <span>Интенсивность</span>
-                <strong>{{ plan.intensity }}</strong>
-            </div>
-            <div class="info-card">
-                <span>Локация</span>
-                <strong>Дом / Зал</strong>
-            </div>
-            <div class="info-card">
-                <span>Доступ</span>
-                <strong>Навсегда</strong>
-            </div>
+            <div class="info-card"><span>Срок</span><strong>{{ plan.duration }}</strong></div>
+            <div class="info-card"><span>Интенсивность</span><strong>{{ plan.intensity }}</strong></div>
+            <div class="info-card"><span>Локация</span><strong>Дом / Зал</strong></div>
+            <div class="info-card"><span>Доступ</span><strong>Навсегда</strong></div>
         </div>
 
         <h3>Что включено:</h3>
-        <ul class="features-list">
+        <ul style="color: var(--text-muted); padding-left: 20px;">
             <li>Видео-инструкции к упражнениям</li>
             <li>Рекомендации по питанию</li>
             <li>Поддержка в чате 24/7</li>
@@ -242,12 +202,44 @@
     </div>
 
     <div class="action-bar">
-        <a href="/checkout/{{ plan_id }}" class="buy-button">
+        <button id="checkout-button" class="buy-button">
             <span>Начать программу</span>
             <span class="price-label">{{ plan.price }}</span>
-        </a>
+        </button>
     </div>
 
-</body>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('{{ stripe_publishable_key }}');
+        const checkoutButton = document.getElementById('checkout-button');
 
+        checkoutButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/create-checkout-session/{{ plan_id }}', {
+                    method: 'POST',
+                });
+
+                if (response.status === 401) {
+                    // Перенаправление, если пользователь не вошел
+                    window.location.href = '/auth/login';
+                    return;
+                }
+
+                const session = await response.json();
+
+                if (session.id) {
+                    const result = await stripe.redirectToCheckout({
+                        sessionId: session.id,
+                    });
+                    if (result.error) alert(result.error.message);
+                } else {
+                    alert('Ошибка: ' + (session.detail || 'Не удалось создать сессию'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Произошла ошибка при переходе к оплате');
+            }
+        });
+    </script>
+</body>
 </html>

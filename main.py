@@ -106,14 +106,38 @@ async def root(request: Request, db: Session = Depends(get_db), username: Option
         "plans": plans  # Теперь в index.html заработает цикл {% for plan_id, plan in plans.items() %}
     })
     
-
+@app.get("/auth/welcome", response_class=HTMLResponse)
+async def welcome_page(request: Request, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
+    user_data = None
+    if username:
+        user = db.query(User).filter(User.username == username).first()
+        if user:
+            user_data = {
+                "username": user.username,
+                "purchased_plans": user.purchased_plans.split(",") if user.purchased_plans else []
+            }
+    
+    # Загружаем планы, чтобы они отобразились в списке на странице welcome
+    plans = get_plans_data()
+    
+    return templates.TemplateResponse("welcome.html", {
+        "request": request,
+        "user": user_data,
+        "plans": plans
+    })
+    
 @app.get("/plans/{plan_id}", response_class=HTMLResponse)
 async def get_plan_page(request: Request, plan_id: str):
     plans = get_plans_data()
     if plan_id not in plans:
         raise HTTPException(status_code=404, detail="План не найден")
+    
+    # Добавляем STRIPE_PUBLISHABLE_KEY в контекст шаблона
     return templates.TemplateResponse("plan_detail.html", {
-        "request": request, "plan": plans[plan_id], "plan_id": plan_id
+        "request": request, 
+        "plan": plans[plan_id], 
+        "plan_id": plan_id,
+        "stripe_publishable_key": STRIPE_PUBLISHABLE_KEY 
     })
 
 
