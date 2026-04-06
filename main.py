@@ -141,8 +141,6 @@ async def get_plan_page(request: Request, plan_id: str):
     })
 
 
-
-
 @app.post("/create-checkout-session/{plan_id}")
 async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie(None)):
     if not username:
@@ -150,26 +148,30 @@ async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie
     
     plans = get_plans_data()
     plan = plans.get(plan_id)
-    
     if not plan:
         raise HTTPException(status_code=404, detail="План не найден")
 
-    # Превращаем цену "2600" в число 260000 (для Stripe)
     price_in_cents = int(float(plan["price"]) * 100)
 
     try:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
+            # МЕТАДАННЫЕ: это секретная записка, которую Stripe вернет нам в Webhook
+            metadata={
+                "username": username,
+                "plan_id": plan_id
+            },
             line_items=[{
                 'price_data': {
-                    'currency': 'rub', # Или 'usd'
+                    'currency': 'rub',
                     'product_data': {'name': plan['title']},
                     'unit_amount': price_in_cents,
                 },
                 'quantity': 1,
             }],
             mode='payment',
-            success_url=f"{os.getenv('YOUR_DOMAIN')}/payment-success?plan_id={plan_id}&session_id={{CHECKOUT_SESSION_ID}}",
+            # Теперь на success_url можно просто показывать поздравление
+            success_url=f"{os.getenv('YOUR_DOMAIN')}/payment-success?plan_id={plan_id}",
             cancel_url=f"{os.getenv('YOUR_DOMAIN')}/plans/{plan_id}",
         )
         return {"id": checkout_session.id}
@@ -177,26 +179,52 @@ async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/payment-success")
-async def payment_success(plan_id: str, session_id: str, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
+async def payment_success(
+    plan_id: str, 
+    session_id: Optional[str] = None, # Делаем Optional, чтобы не было ошибки
+    db: Session = Depends(get_db), 
+    username: Optional[str] = Cookie(None)
+):
     if not username: 
         return RedirectResponse("/")
-    
-    try:
-        # 1. Проверяем сессию в Stripe
-        session = stripe.checkout.Session.retrieve(session_id)
-        if session.payment_status != 'paid':
-            raise HTTPException(status_code=400, detail="Оплата не подтверждена")
-            
-        # 2. Только если оплачено, добавляем курс
-        user = db.query(User).filter(User.username == username).first()
-        if user:
-            current_plans = (user.purchased_plans or "").split(",")
-            if plan_id not in current_plans:
-                current_plans.append(plan_id)
-                user.purchased_plans = ",".join(filter(None, current_plans))
-                db.commit()
-    except Exception as e:
-        logging.error(f"Ошибка проверки платежа: {e}")
-        return RedirectResponse(url=f"/course/{plan_id}?error=payment_failed")
-    
+
     return RedirectResponse(url=f"/course/{plan_id}")
+
+
+@app.post("/webhook")
+async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
+    payload = await request.body()
+    sig_header = request.headers.get('stripe-signature')
+    endpoint_secret = os.getenv("STRIPE_WEBHOOK_SECRET") # Секрет из Stripe
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+    except ValueError as e:
+        # Невалидный payload
+        raise HTTPException(status_code=400, detail="Invalid payload")
+    except stripe.error.SignatureVerificationError as e:
+        # Невалидная подпись
+        raise HTTPException(status_code=400, detail="Invalid signature")
+
+    # Обрабатываем событие успешной оплаты
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        
+        # Извлекаем данные, которые мы передали при создании сессии
+        metadata = session.get('metadata', {})
+        username = metadata.get('username')
+        plan_id = metadata.get('plan_id')
+
+        if username and plan_id:
+            user = db.query(User).filter(User.username == username).first()
+            if user:
+                current_plans = (user.purchased_plans or "").split(",")
+                if plan_id not in current_plans:
+                    current_plans.append(plan_id)
+                    user.purchased_plans = ",".join(filter(None, current_plans))
+                    db.commit()
+                    logging.info(f"КУРС АКТИВИРОВАН: Пользователь {username} купил {plan_id}")
+
+    return {"status": "success"}

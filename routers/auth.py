@@ -140,16 +140,6 @@ async def get_register(request: Request):
     )
     return response
 
-@router.get("/welcome", response_class=HTMLResponse)
-def welcome(request: Request, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
-    if not username:
-        return RedirectResponse(url="/auth/login", status_code=303)
-    
-    user = db.query(models.User).filter(models.User.username == username).first()
-    if not user: 
-        return RedirectResponse(url="/auth/register", status_code=303)
-        
-    return templates.TemplateResponse("welcome.html", {"request": request, "current_user": user})
 
 @router.get("/profile", response_class=HTMLResponse)
 async def get_profile_page(request: Request, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
