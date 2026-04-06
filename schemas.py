@@ -6,7 +6,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-
+    csrf_token: str
 class UserRead(BaseModel):
     id: int
     username: str

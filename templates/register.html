@@ -212,6 +212,7 @@
     <p class="subtitle">Начни свой путь к идеальному телу</p>
     <div id="message"></div>
     <form id="register-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="form-group">
         <label>Логин</label>
         <input type="text" name="username" placeholder="Придумайте логин" required>

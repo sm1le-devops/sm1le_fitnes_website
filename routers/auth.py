@@ -61,16 +61,25 @@ def is_username_valid(username: str) -> bool:
 # --- API Эндпоинты ---
 
 @router.post("/register")
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+def register(user: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
+    # 1. ПРОВЕРКА CSRF ТОКЕНА
+    cookie_csrf = request.cookies.get("csrf_token")
+    if not cookie_csrf or not validate_csrf_token(user.csrf_token):
+        raise HTTPException(status_code=403, detail="Ошибка безопасности (CSRF)")
+
+    # 2. ПРОВЕРКА ВАЛИДНОСТИ ИМЕНИ
     if not is_username_valid(user.username):
         raise HTTPException(status_code=400, detail="Имя может содержать только буквы, цифры и '_'")
 
+    # 3. ПРОВЕРКА ДУБЛИКАТОВ
     db_user = db.query(models.User).filter(
         (models.User.username == user.username) | (models.User.email == user.email)
     ).first()
+    
     if db_user:
         raise HTTPException(status_code=400, detail="Логин или Email уже заняты")
 
+    # 4. СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ
     new_user = models.User(
         username=user.username,
         email=user.email,
@@ -107,6 +116,28 @@ async def get_login(request: Request):
     csrf_token = generate_csrf_token()
     response = templates.TemplateResponse("login.html", {"request": request, "csrf_token": csrf_token})
     response.set_cookie("csrf_token", csrf_token, httponly=False, secure=True, samesite="lax", path="/")
+    return response
+
+@router.get("/register", response_class=HTMLResponse)
+async def get_register(request: Request):
+    # Генерируем токен безопасности
+    csrf_token = generate_csrf_token()
+    
+    # Отдаем страницу и передаем токен внутрь HTML
+    response = templates.TemplateResponse("register.html", {
+        "request": request, 
+        "csrf_token": csrf_token
+    })
+    
+    # Сохраняем токен в куки браузера для последующей проверки
+    response.set_cookie(
+        "csrf_token", 
+        csrf_token, 
+        httponly=False, 
+        secure=True, 
+        samesite="lax", 
+        path="/"
+    )
     return response
 
 @router.get("/welcome", response_class=HTMLResponse)
