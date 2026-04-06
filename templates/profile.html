@@ -41,8 +41,13 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
 
     .profile-header {
@@ -60,7 +65,9 @@
       transition: 0.3s;
     }
 
-    #avatar-wrapper:active { transform: scale(0.95); }
+    #avatar-wrapper:active {
+      transform: scale(0.95);
+    }
 
     img.avatar {
       width: 110px;
@@ -223,8 +230,8 @@
   <div class="app-wrapper">
     <div class="profile-header">
       <div id="avatar-wrapper" onclick="document.getElementById('avatar').click()">
-        <img src="{{ user.avatar_url if user and user.avatar_url else '/static/default-avatar.png' }}" class="avatar" id="avatar-preview"
-          onerror="this.src='/static/default-avatar.png'">
+        <img src="{{ user.avatar_url if user and user.avatar_url else '/static/default-avatar.png' }}" class="avatar"
+          id="avatar-preview" onerror="this.src='/static/default-avatar.png'">
         <div id="avatar-overlay">📸</div>
       </div>
       <h1 id="display-username" style="margin: 0; font-size: 24px;">{{ user.username if user else 'Профиль' }}</h1>
@@ -245,6 +252,18 @@
         <input type="password" id="password" name="password" placeholder="Оставьте пустым, чтобы не менять">
       </div>
 
+      <div class="grid-inputs" style="grid-template-columns: 1fr; margin-bottom: 12px;">
+        <div>
+          <label>Пол</label>
+          <select name="gender"
+            style="width: 100%; padding: 14px; border-radius: 16px; border: 1px solid #334155; background: var(--card-bg); color: white; font-size: 15px; outline: none;">
+            <option value="" {% if not user.gender %}selected{% endif %}>Не указан</option>
+            <option value="Мужской" {% if user.gender=='Мужской' %}selected{% endif %}>Мужской</option>
+            <option value="Женский" {% if user.gender=='Женский' %}selected{% endif %}>Женский</option>
+          </select>
+        </div>
+      </div>
+      
       <div class="grid-inputs">
         <div>
           <label>Вес (кг)</label>
@@ -253,8 +272,8 @@
         </div>
         <div>
           <label>Рост (см)</label>
-          <input type="number" id="height" name="height"
-            value="{{ user.height if user and user.height else '' }}" placeholder="0">
+          <input type="number" id="height" name="height" value="{{ user.height if user and user.height else '' }}"
+            placeholder="0">
         </div>
       </div>
 
@@ -271,13 +290,15 @@
   <nav class="bottom-nav">
     <a href="/" class="nav-item">
       <svg viewBox="0 0 24 24">
-        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <path
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
       <span>Главная</span>
     </a>
     <a href="/auth/welcome" class="nav-item">
       <svg viewBox="0 0 24 24">
-        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        <path
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
       </svg>
       <span>Планы</span>
     </a>

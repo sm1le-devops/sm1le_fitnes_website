@@ -39,8 +39,13 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
 
     .header {
@@ -186,41 +191,46 @@
 <body>
 
   <div class="app-wrapper">
-    <div class="header">
-      <h1>Выбери план</h1>
-      <p>Привет, {{ current_user.username if current_user else 'атлет' }}! Начнем?</p>
+    <div class="greeting">
+      <h1>Доступные программы</h1>
+      <p>Выберите направление для старта</p>
     </div>
 
-    <div class="plan-card">
-      <div class="plan-badge">NEW</div>
-      <span class="plan-title">Быстрый старт</span>
-      <p class="plan-desc">Идеально для новичков. Базовые упражнения и основы питания на 4 недели.</p>
-      <a href="#" class="btn-select">Подробнее</a>
-    </div>
+    <div class="plans-list">
+      {% for plan_id, plan in plans.items() %}
+      <div class="plan-card-simple"
+        style="background: var(--card-bg); padding: 20px; border-radius: 20px; margin-bottom: 15px;">
+        <h3 style="margin: 0 0 10px 0;">{{ plan.title }}</h3>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">{{ plan.description }}</p>
 
-    <div class="plan-card">
-      <span class="plan-title">Максимум силы</span>
-      <p class="plan-desc">Программа для тех, кто хочет увеличить веса в базе. Тяжелый тренинг.</p>
-      <a href="#" class="btn-select">Подробнее</a>
-    </div>
-
-    <div class="plan-card">
-      <span class="plan-title">Рельеф</span>
-      <p class="plan-desc">Интенсивные тренировки и кардио-протоколы для сжигания жира.</p>
-      <a href="#" class="btn-select">Подробнее</a>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 700; color: var(--accent);">{{ plan.price }}</span>
+          <a href="/plans/{{ plan_id }}" class="btn-select"
+            style="background: var(--accent); color: white; text-decoration: none; padding: 8px 16px; border-radius: 10px; font-size: 14px; font-weight: 600;">
+            {% if user and plan_id in user.purchased_plans %}
+            Открыть курс
+            {% else %}
+            Подробнее
+            {% endif %}
+          </a>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
 
   <nav class="bottom-nav">
     <a href="/" class="nav-item">
       <svg viewBox="0 0 24 24">
-        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <path
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
       <span>Главная</span>
     </a>
     <a href="/auth/welcome" class="nav-item active">
       <svg viewBox="0 0 24 24">
-        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        <path
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
       </svg>
       <span>Планы</span>
     </a>
@@ -234,4 +244,5 @@
   </nav>
 
 </body>
+
 </html>

@@ -283,27 +283,29 @@
 
     <h2 class="section-title">🔥 Популярные планы</h2>
 
-    <div id="plan-weight_loss"
-      class="plan-card {% if user and 'weight_loss' in user.purchased_plans %}unlocked{% endif %}"
-      style="background-image: url('/static/uploads/photo2.png');" onclick="selectPlan('weight_loss')">
-      <div class="unlock-badge">КУПЛЕНО</div>
-      <div class="price-tag">990 $</div>
-      <div class="plan-info">
-        <h3>Интенсивное похудение</h3>
-        <p>4 недели • Жиросжигание • Дом/Зал</p>
-      </div>
-    </div>
+    {% if plans %}
+    {% for plan_id, plan in plans.items() %}
+    {% set is_unlocked = user and plan_id in user.purchased_plans %}
 
-    <div id="plan-muscle_gain"
-      class="plan-card {% if user and 'muscle_gain' in user.purchased_plans %}unlocked{% endif %}"
-      style="background-image: url('/static/uploads/photo1.png');" onclick="selectPlan('muscle_gain')">
+    <div id="plan-{{ plan_id }}" class="plan-card {{ 'unlocked' if is_unlocked else '' }}"
+      style="background-image: url('{{ plan.image }}');" onclick="selectPlan('{{ plan_id }}')">
+
       <div class="unlock-badge">КУПЛЕНО</div>
-      <div class="price-tag">1490 $</div>
+
+      {# Показываем цену, только если план не куплен #}
+      {% if not is_unlocked %}
+      <div class="price-tag">{{ plan.price }}</div>
+      {% endif %}
+
       <div class="plan-info">
-        <h3>Набор массы: PRO</h3>
-        <p>8 недель • Сила и рельеф • Зал</p>
+        <h3>{{ plan.title }}</h3>
+        <p>{{ plan.duration }} • {{ plan.intensity }} • Дом/Зал</p>
       </div>
     </div>
+    {% endfor %}
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center;">Загрузка планов...</p>
+    {% endif %}
 
     <div class="footer-text">sm1le.fitness s.r.o • 2024</div>
   </div>

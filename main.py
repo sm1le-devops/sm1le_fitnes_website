@@ -1,5 +1,6 @@
 import os
 import json
+import stripe
 import logging
 from typing import Optional
 
@@ -28,6 +29,8 @@ logging.basicConfig(
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
 templates = Jinja2Templates(directory="templates")
 templates.env.filters["tojson"] = lambda data: json.dumps(data, ensure_ascii=False)
 
@@ -82,22 +85,27 @@ def get_plans_data():
 
 # --- Routes ---
 
+    
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
     user_data = None
     if username:
         user = db.query(User).filter(User.username == username).first()
         if user:
-            # Превращаем объект пользователя в словарь для шаблона
             user_data = {
                 "username": user.username,
                 "purchased_plans": user.purchased_plans.split(",") if user.purchased_plans else []
             }
     
+    # Получаем данные планов для отображения на главной
+    plans = get_plans_data()
+    
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "user": user_data
+        "user": user_data,
+        "plans": plans  # Теперь в index.html заработает цикл {% for plan_id, plan in plans.items() %}
     })
+    
 
 @app.get("/plans/{plan_id}", response_class=HTMLResponse)
 async def get_plan_page(request: Request, plan_id: str):
@@ -108,67 +116,63 @@ async def get_plan_page(request: Request, plan_id: str):
         "request": request, "plan": plans[plan_id], "plan_id": plan_id
     })
 
-@app.get("/course/{plan_id}", response_class=HTMLResponse)
-async def get_course_view(
-    request: Request, 
-    plan_id: str, 
-    db: Session = Depends(get_db), 
-    username: Optional[str] = Cookie(None)
-):
-    # 1. Проверка авторизации
+
+
+
+@app.post("/create-checkout-session/{plan_id}")
+async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie(None)):
     if not username:
-        return RedirectResponse(url="/auth/login", status_code=303)
+        raise HTTPException(status_code=401, detail="Войдите в аккаунт")
     
-    user = db.query(User).filter(User.username == username).first()
-    if not user:
-        return RedirectResponse(url="/auth/register", status_code=303)
-    
-    # 2. Проверка доступа (куплен ли план)
-    purchased = user.purchased_plans.split(",") if user.purchased_plans else []
-    if plan_id not in purchased:
-        # Если не куплено, отправляем на страницу описания с ошибкой
-        return RedirectResponse(url=f"/plans/{plan_id}?error=not_paid", status_code=303)
-    
-    # 3. Получение данных из plans.json
     plans = get_plans_data()
-    plan_info = plans.get(plan_id)
-
-    if not plan_info:
-        # Если id в ссылке есть, а в json нет — выкидываем 404
-        raise HTTPException(status_code=404, detail=f"План '{plan_id}' не найден в базе данных (plans.json)")
-
-    # 4. Подготовка данных для JavaScript
-    # Мы создаем JSON-строку заранее, чтобы Jinja2 не сломала кавычки
-    plan_json_json = json.dumps(plan_info, ensure_ascii=False)
-
-    return templates.TemplateResponse("course_view.html", {
-        "request": request,
-        "plan": plan_info,             # Для обычного вывода заголовков через {{ plan.title }}
-        "plan_json_safe": plan_json_json, # Специально для скрипта внизу страницы
-        "plan_id": plan_id
-    })
+    plan = plans.get(plan_id)
     
-@app.get("/checkout/{plan_id}")
-async def fake_checkout(
-    plan_id: str, 
-    db: Session = Depends(get_db), 
-    username: Optional[str] = Cookie(None)
-):
-    # 1. Проверяем, залогинен ли юзер
-    if not username:
-        return RedirectResponse(url="/auth/login", status_code=303)
+    if not plan:
+        raise HTTPException(status_code=404, detail="План не найден")
 
-    user = db.query(User).filter(User.username == username).first()
-    if not user:
-        return RedirectResponse(url="/auth/register", status_code=303)
+    # Превращаем цену "2600" в число 260000 (для Stripe)
+    price_in_cents = int(float(plan["price"]) * 100)
 
-    # 2. Добавляем план в список купленных (если его там еще нет)
-    current_plans = user.purchased_plans.split(",") if user.purchased_plans else []
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'rub', # Или 'usd'
+                    'product_data': {'name': plan['title']},
+                    'unit_amount': price_in_cents,
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=f"{os.getenv('YOUR_DOMAIN')}/payment-success?plan_id={plan_id}&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{os.getenv('YOUR_DOMAIN')}/plans/{plan_id}",
+        )
+        return {"id": checkout_session.id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/payment-success")
+async def payment_success(plan_id: str, session_id: str, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
+    if not username: 
+        return RedirectResponse("/")
     
-    if plan_id not in current_plans:
-        current_plans.append(plan_id)
-        user.purchased_plans = ",".join(filter(None, current_plans))
-        db.commit()
-
-    # 3. Редиректим сразу на страницу курса
-    return RedirectResponse(url=f"/course/{plan_id}", status_code=303)
+    try:
+        # 1. Проверяем сессию в Stripe
+        session = stripe.checkout.Session.retrieve(session_id)
+        if session.payment_status != 'paid':
+            raise HTTPException(status_code=400, detail="Оплата не подтверждена")
+            
+        # 2. Только если оплачено, добавляем курс
+        user = db.query(User).filter(User.username == username).first()
+        if user:
+            current_plans = (user.purchased_plans or "").split(",")
+            if plan_id not in current_plans:
+                current_plans.append(plan_id)
+                user.purchased_plans = ",".join(filter(None, current_plans))
+                db.commit()
+    except Exception as e:
+        logging.error(f"Ошибка проверки платежа: {e}")
+        return RedirectResponse(url=f"/course/{plan_id}?error=payment_failed")
+    
+    return RedirectResponse(url=f"/course/{plan_id}")
