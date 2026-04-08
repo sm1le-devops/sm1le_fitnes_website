@@ -92,7 +92,7 @@ def register(user: schemas.UserCreate, request: Request, db: Session = Depends(g
 
 @router.post("/login")
 async def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    # Проверка CSRF через новую функцию
+    # Проверка CSRF
     cookie_csrf = request.cookies.get("csrf_token")
     if not cookie_csrf or not validate_csrf_token(data.csrf_token):
          raise HTTPException(status_code=403, detail="Ошибка безопасности (CSRF)")
@@ -103,10 +103,25 @@ async def login(data: LoginRequest, request: Request, db: Session = Depends(get_
 
     response = JSONResponse(content={"redirect_url": "/auth/welcome"})
     
-    # Ставим куки
-    response.set_cookie(key="username", value=db_user.username, httponly=False, secure=True, samesite="lax", path="/", max_age=86400)
-    # Генерируем новый токен для следующей сессии
-    response.set_cookie(key="csrf_token", value=generate_csrf_token(), httponly=False, secure=True, samesite="lax", path="/")
+    # КУКА ТЕПЕРЬ СТРОГО НАСТРОЕНА ДЛЯ HTTPS
+    response.set_cookie(
+        key="username", 
+        value=db_user.username, 
+        httponly=True,   # Защищаем от XSS
+        secure=True,     # ОБЯЗАТЕЛЬНО для Render (HTTPS)
+        samesite="Lax",  # Позволяет куке передаваться при навигации
+        path="/", 
+        max_age=86400
+    )
+    
+    response.set_cookie(
+        key="csrf_token", 
+        value=generate_csrf_token(), 
+        httponly=False,  # JS должен видеть токен для форм
+        secure=True, 
+        samesite="Lax", 
+        path="/"
+    )
     return response
 
 # --- Страницы (HTML) ---
