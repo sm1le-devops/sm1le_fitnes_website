@@ -177,25 +177,26 @@ async def get_course_view(request: Request, plan_id: str, db: Session = Depends(
 
 @app.post("/create-checkout-session/{plan_id}")
 async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie(None)):
-    print(f"DEBUG: Пытаемся купить {plan_id}. Юзер из куки: {username}")
-    
+    # 1. Проверка авторизации
+    print(f"DEBUG: Попытка оплаты. Юзер: {username}, План: {plan_id}")
     if not username:
         raise HTTPException(status_code=401, detail="Войдите в аккаунт")
     
+    # 2. Получение данных плана
     plans = get_plans_data()
     plan = plans.get(plan_id)
     if not plan:
         raise HTTPException(status_code=404, detail="План не найден")
 
-    current_domain = os.getenv('YOUR_DOMAIN') or os.getenv('RENDER_EXTERNAL_URL') or "http://localhost:8000"
-    current_domain = current_domain.rstrip('/') # Убираем лишний слэш в конце, если он есть
+    raw_domain = os.getenv('YOUR_DOMAIN') or os.getenv('RENDER_EXTERNAL_URL') or "http://localhost:8000"
+    # Удаляем слэш в конце, чтобы ссылки типа domain/success не превратились в domain//success
+    current_domain = raw_domain.rstrip('/')
 
     price_in_cents = int(float(plan["price"]) * 100)
 
     try:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
-            # МЕТАДАННЫЕ: критически важны для работы Webhook
             metadata={
                 "username": username,
                 "plan_id": plan_id
@@ -209,13 +210,12 @@ async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie
                 'quantity': 1,
             }],
             mode='payment',
-            # Формируем динамические ссылки
             success_url=f"{current_domain}/payment-success?plan_id={plan_id}&session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{current_domain}/plans/{plan_id}",
         )
         return {"id": checkout_session.id}
     except Exception as e:
-        logging.error(f"Stripe Error: {e}")
+        logging.error(f"Ошибка Stripe: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/payment-success")
