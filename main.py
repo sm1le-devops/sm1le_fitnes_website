@@ -239,9 +239,19 @@ async def payment_success(request: Request, plan_id: str):
                 <div>
                     <h1 style="color: #22C55E;">Оплата прошла успешно!</h1>
                     <p>Активируем ваш доступ к курсу...</p>
-                    <a href="/course/{plan_id}" style="display: inline-block; padding: 12px 24px; background: #F97316; color: white; text-decoration: none; border-radius: 8px; margin-top: 20px;">Перейти к курсу</a>
+                    
+                    <button onclick="window.location.replace('/course/{plan_id}')" style="display: inline-block; padding: 12px 24px; background: #F97316; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 8px; margin-top: 20px;">Перейти к курсу</button>
+                    
                     <script>
-                        setTimeout(() => {{ window.location.href = "/course/{plan_id}"; }}, 4000);
+                        // Используем replace вместо href
+                        setTimeout(() => {{ window.location.replace("/course/{plan_id}"); }}, 4000);
+                        
+                        // Дополнительная защита: если пользователь все же попал сюда по кнопке "назад", сразу кидаем на главную
+                        window.onpageshow = function(event) {{
+                            if (event.persisted) {{
+                                window.location.replace("/");
+                            }}
+                        }};
                     </script>
                 </div>
             </body>
