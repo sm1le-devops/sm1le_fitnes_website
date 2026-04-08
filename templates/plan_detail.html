@@ -41,7 +41,9 @@
         }
 
         @media (min-width: 768px) {
-            .hero { height: 50vh; }
+            .hero {
+                height: 50vh;
+            }
         }
 
         .hero::after {
@@ -159,7 +161,9 @@
             transition: transform 0.2s;
         }
 
-        .buy-button:active { transform: scale(0.96); }
+        .buy-button:active {
+            transform: scale(0.96);
+        }
 
         .price-label {
             background: rgba(255, 255, 255, 0.2);
@@ -201,11 +205,22 @@
         </ul>
     </div>
 
-    <div class="action-bar">
+    <div class="fixed-bottom">
+        {% if is_purchased %}
+        <button onclick="window.location.href='/course/{{ plan_id }}'" class="buy-button"
+            style="background: #22C55E; box-shadow: 0 10px 25px rgba(34, 197, 94, 0.4);">
+            <span>Открыть программу</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14m-7-7 7 7-7 7" />
+            </svg>
+        </button>
+        {% else %}
         <button id="checkout-button" class="buy-button">
             <span>Начать программу</span>
             <span class="price-label">{{ plan.price }}</span>
         </button>
+        {% endif %}
     </div>
 
     <script src="https://js.stripe.com/v3/"></script>
@@ -213,33 +228,39 @@
         const stripe = Stripe('{{ stripe_publishable_key }}');
         const checkoutButton = document.getElementById('checkout-button');
 
-        checkoutButton.addEventListener('click', async () => {
-            try {
-                const response = await fetch('/create-checkout-session/{{ plan_id }}', {
-                    method: 'POST',
-                });
+        // Добавляем проверку: вешать обработчик только если кнопка существует
+        if (checkoutButton) {
+            checkoutButton.addEventListener('click', async () => {
+                try {
+                    // Вибрация для отклика (на смартфонах)
+                    if (window.navigator.vibrate) window.navigator.vibrate(10);
 
-                if (response.status === 401) {
-                    // Перенаправление, если пользователь не вошел
-                    window.location.href = '/auth/login';
-                    return;
-                }
-
-                const session = await response.json();
-
-                if (session.id) {
-                    const result = await stripe.redirectToCheckout({
-                        sessionId: session.id,
+                    const response = await fetch('/create-checkout-session/{{ plan_id }}', {
+                        method: 'POST',
                     });
-                    if (result.error) alert(result.error.message);
-                } else {
-                    alert('Ошибка: ' + (session.detail || 'Не удалось создать сессию'));
+
+                    if (response.status === 401) {
+                        window.location.href = '/auth/login';
+                        return;
+                    }
+
+                    const session = await response.json();
+
+                    if (session.id) {
+                        const result = await stripe.redirectToCheckout({
+                            sessionId: session.id,
+                        });
+                        if (result.error) alert(result.error.message);
+                    } else {
+                        alert('Ошибка: ' + (session.detail || 'Не удалось создать сессию'));
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Произошла ошибка при переходе к оплате');
                 }
-            } catch (err) {
-                console.error(err);
-                alert('Произошла ошибка при переходе к оплате');
-            }
-        });
+            });
+        }
     </script>
 </body>
+
 </html>

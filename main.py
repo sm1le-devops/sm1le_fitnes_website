@@ -127,16 +127,22 @@ async def welcome_page(request: Request, db: Session = Depends(get_db), username
     })
     
 @app.get("/plans/{plan_id}", response_class=HTMLResponse)
-async def get_plan_page(request: Request, plan_id: str):
+async def get_plan_page(request: Request, plan_id: str, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
     plans = get_plans_data()
     if plan_id not in plans:
         raise HTTPException(status_code=404, detail="План не найден")
     
-    # Добавляем STRIPE_PUBLISHABLE_KEY в контекст шаблона
+    is_purchased = False
+    if username:
+        user = db.query(User).filter(User.username == username).first()
+        if user and plan_id in (user.purchased_plans or "").split(","):
+            is_purchased = True
+    
     return templates.TemplateResponse("plan_detail.html", {
         "request": request, 
         "plan": plans[plan_id], 
         "plan_id": plan_id,
+        "is_purchased": is_purchased, # Передаем статус
         "stripe_publishable_key": STRIPE_PUBLISHABLE_KEY 
     })
 
