@@ -52,7 +52,10 @@ async def shutdown():
         await app.state.redis.close()
 
 # --- CORS ---
-origins = ["http://localhost:8000", "http://127.0.0.1:8000"]
+origins = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
 RENDER_URL = os.getenv("RENDER_EXTERNAL_URL")
 if RENDER_URL:
     clean_url = RENDER_URL.rstrip('/')
@@ -174,6 +177,8 @@ async def get_course_view(request: Request, plan_id: str, db: Session = Depends(
 
 @app.post("/create-checkout-session/{plan_id}")
 async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie(None)):
+    print(f"DEBUG: Пытаемся купить {plan_id}. Юзер из куки: {username}")
+    
     if not username:
         raise HTTPException(status_code=401, detail="Войдите в аккаунт")
     
@@ -182,12 +187,15 @@ async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie
     if not plan:
         raise HTTPException(status_code=404, detail="План не найден")
 
+    current_domain = os.getenv('YOUR_DOMAIN') or os.getenv('RENDER_EXTERNAL_URL') or "http://localhost:8000"
+    current_domain = current_domain.rstrip('/') # Убираем лишний слэш в конце, если он есть
+
     price_in_cents = int(float(plan["price"]) * 100)
 
     try:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
-            # МЕТАДАННЫЕ: это секретная записка, которую Stripe вернет нам в Webhook
+            # МЕТАДАННЫЕ: критически важны для работы Webhook
             metadata={
                 "username": username,
                 "plan_id": plan_id
@@ -201,12 +209,13 @@ async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie
                 'quantity': 1,
             }],
             mode='payment',
-            # Теперь на success_url можно просто показывать поздравление
-            success_url=f"{os.getenv('YOUR_DOMAIN')}/payment-success?plan_id={plan_id}",
-            cancel_url=f"{os.getenv('YOUR_DOMAIN')}/plans/{plan_id}",
+            # Формируем динамические ссылки
+            success_url=f"{current_domain}/payment-success?plan_id={plan_id}&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{current_domain}/plans/{plan_id}",
         )
         return {"id": checkout_session.id}
     except Exception as e:
+        logging.error(f"Stripe Error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/payment-success")
