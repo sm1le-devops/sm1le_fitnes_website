@@ -175,14 +175,22 @@ async def get_course_view(request: Request, plan_id: str, user_data=Depends(get_
     if not user_data:
         return RedirectResponse(url="/auth/login")
     
+    # Если пользователь не покупал этот план, отправляем на страницу описания
     if plan_id not in user_data["purchased_plans"]:
         return RedirectResponse(url=f"/plans/{plan_id}")
 
+    # Подготавливаем данные для JS (список упражнений)
+    plan_info = plans[plan_id]
+    plan_json_safe = json.dumps(plan_info, ensure_ascii=False)
+
     return templates.TemplateResponse("course_view.html", {
         "request": request,
-        "plan": plans[plan_id],
+        "plan": plan_info,
         "plan_id": plan_id,
-        "user": user_data["obj"]
+        "user": user_data["obj"],
+        "is_purchased": True,  # Обязательно передаем True, раз мы прошли проверку выше
+        "stripe_pub_key": STRIPE_PUBLISHABLE_KEY, # Чтобы Stripe не ругался на пустой ключ
+        "plan_json_safe": plan_json_safe # Чтобы JS видел упражнения
     })
 
 @app.post("/create-checkout-session/{plan_id}")
