@@ -3,6 +3,7 @@ import json
 import stripe
 import logging
 from typing import Optional
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Depends, Cookie, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi_limiter import FastAPILimiter
-
+from dotenv import load_dotenv
 from redis.asyncio import Redis
 from sqlalchemy.orm import Session
 
@@ -19,45 +20,94 @@ from database import Base, engine, get_db
 from models import User
 from routers import auth, auth_api, password_reset
 
+# Загрузка переменных
+load_dotenv()
+
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
-# Создание таблиц
-Base.metadata.create_all(bind=engine)
-
-app = FastAPI()
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+# Проверка критических переменных
 STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
-if not STRIPE_PUBLISHABLE_KEY:
-    logging.error("КРИТИЧЕСКАЯ ОШИБКА: STRIPE_PUBLISHABLE_KEY не найден в переменных окружения!")
-templates = Jinja2Templates(directory="templates")
-templates.env.filters["tojson"] = lambda data: json.dumps(data, ensure_ascii=False)
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+stripe.api_key = STRIPE_SECRET_KEY
 
-# --- Startup/Shutdown ---
-@app.on_event("startup")
-async def startup():
+if not STRIPE_PUBLISHABLE_KEY or not STRIPE_SECRET_KEY:
+    logging.error("КРИТИЧЕСКАЯ ОШИБКА: Ключи Stripe не найдены в .env!")
+
+# Глобальный кэш для планов
+_PLANS_CACHE = None
+
+# --- Вспомогательная логика ---
+
+def get_plans_data():
+    """Загружает планы из JSON с использованием кэша."""
+    global _PLANS_CACHE
+    if _PLANS_CACHE is not None:
+        return _PLANS_CACHE
+    try:
+        with open("plans.json", "r", encoding="utf-8") as f:
+            _PLANS_CACHE = json.load(f)
+            return _PLANS_CACHE
+    except Exception as e:
+        logging.error(f"Ошибка чтения plans.json: {e}")
+        return {}
+
+async def get_current_active_user(
+    db: Session = Depends(get_db), 
+    username: Optional[str] = Cookie(None)
+) -> Optional[dict]:
+    """Зависимость для получения данных текущего пользователя."""
+    if not username:
+        return None
+    
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        return None
+    
+    # Парсим купленные планы сразу здесь
+    purchased_plans = [p.strip() for p in (user.purchased_plans or "").split(",") if p.strip()]
+    
+    return {
+        "obj": user, # SQLAlchemy объект для обновлений
+        "username": user.username,
+        "purchased_plans": purchased_plans
+    }
+
+# --- Lifecycle ---
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Создание таблиц при запуске
+    Base.metadata.create_all(bind=engine)
+    
+    # Подключение Redis
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     try:
         redis_client = Redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
         app.state.redis = redis_client
         await FastAPILimiter.init(redis_client)
-        logging.info("Redis подключен.")
+        logging.info("✅ Redis подключен.")
     except Exception as e:
-        logging.error(f"Redis не доступен: {e}")
-
-@app.on_event("shutdown")
-async def shutdown():
+        logging.error(f"❌ Redis не доступен: {e}")
+    
+    yield
+    
+    # Отключение Redis
     if hasattr(app.state, "redis"):
         await app.state.redis.close()
 
+# --- Приложение ---
+
+app = FastAPI(lifespan=lifespan)
+templates = Jinja2Templates(directory="templates")
+templates.env.filters["tojson"] = lambda data: json.dumps(data, ensure_ascii=False)
+
 # --- CORS ---
-origins = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
+origins = ["http://localhost:8000", "http://127.0.0.1:8000"]
 RENDER_URL = os.getenv("RENDER_EXTERNAL_URL")
 if RENDER_URL:
     clean_url = RENDER_URL.rstrip('/')
@@ -71,136 +121,89 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Static ---
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# --- Routers ---
+# Подключение роутеров
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(auth_api.router)
 app.include_router(password_reset.router, prefix="/auth", tags=["Password Reset"])
 
-# --- Logic ---
-def get_plans_data():
-    try:
-        with open("plans.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        logging.error(f"Ошибка JSON: {e}")
-        return {}
-
 # --- Routes ---
 
-    
 @app.get("/", response_class=HTMLResponse)
-async def root(request: Request, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
-    user_data = None
-    if username:
-        user = db.query(User).filter(User.username == username).first()
-        if user:
-            user_data = {
-                "username": user.username,
-                "purchased_plans": user.purchased_plans.split(",") if user.purchased_plans else []
-            }
-    
-    # Получаем данные планов для отображения на главной
+async def root(request: Request, user_data=Depends(get_current_active_user)):
     plans = get_plans_data()
-    
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": user_data,
-        "plans": plans  # Теперь в index.html заработает цикл {% for plan_id, plan in plans.items() %}
+        "plans": plans
     })
-    
+
 @app.get("/auth/welcome", response_class=HTMLResponse)
-async def welcome_page(request: Request, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
-    user_data = None
-    if username:
-        user = db.query(User).filter(User.username == username).first()
-        if user:
-            user_data = {
-                "username": user.username,
-                "purchased_plans": user.purchased_plans.split(",") if user.purchased_plans else []
-            }
-    
-    # Загружаем планы, чтобы они отобразились в списке на странице welcome
+async def welcome_page(request: Request, user_data=Depends(get_current_active_user)):
     plans = get_plans_data()
-    
     return templates.TemplateResponse("welcome.html", {
         "request": request,
         "user": user_data,
         "plans": plans
     })
-    
+
 @app.get("/plans/{plan_id}", response_class=HTMLResponse)
-async def get_plan_page(request: Request, plan_id: str, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
+async def get_plan_page(request: Request, plan_id: str, user_data=Depends(get_current_active_user)):
     plans = get_plans_data()
     if plan_id not in plans:
         raise HTTPException(status_code=404, detail="План не найден")
     
     is_purchased = False
-    if username:
-        user = db.query(User).filter(User.username == username).first()
-        if user and plan_id in (user.purchased_plans or "").split(","):
-            is_purchased = True
+    if user_data and plan_id in user_data["purchased_plans"]:
+        is_purchased = True
     
     return templates.TemplateResponse("plan_detail.html", {
         "request": request, 
         "plan": plans[plan_id], 
         "plan_id": plan_id,
-        "is_purchased": is_purchased, # Передаем статус
+        "is_purchased": is_purchased,
         "stripe_publishable_key": STRIPE_PUBLISHABLE_KEY 
     })
 
 @app.get("/course/{plan_id}", response_class=HTMLResponse)
-async def get_course_view(request: Request, plan_id: str, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
+async def get_course_view(request: Request, plan_id: str, user_data=Depends(get_current_active_user)):
     plans = get_plans_data()
     if plan_id not in plans:
         raise HTTPException(status_code=404, detail="Курс не найден")
     
-    # 1. Проверяем, авторизован ли пользователь
-    if not username:
+    if not user_data:
         return RedirectResponse(url="/auth/login")
     
-    user = db.query(User).filter(User.username == username).first()
-    
-    # 2. Проверяем, куплен ли этот курс (безопасность)
-    purchased_plans = (user.purchased_plans or "").split(",") if user else []
-    if plan_id not in purchased_plans:
-        # Если не куплено, отправляем обратно на страницу описания плана
+    if plan_id not in user_data["purchased_plans"]:
         return RedirectResponse(url=f"/plans/{plan_id}")
 
-    # 3. Если всё ок, показываем содержимое курса
     return templates.TemplateResponse("course_view.html", {
         "request": request,
         "plan": plans[plan_id],
         "plan_id": plan_id,
-        "user": user
+        "user": user_data["obj"]
     })
 
 @app.post("/create-checkout-session/{plan_id}")
-async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie(None)):
-    # 1. Проверка авторизации
-    print(f"DEBUG: Попытка оплаты. Юзер: {username}, План: {plan_id}")
-    if not username:
+async def create_checkout_session(plan_id: str, user_data=Depends(get_current_active_user)):
+    if not user_data:
         raise HTTPException(status_code=401, detail="Войдите в аккаунт")
     
-    # 2. Получение данных плана
     plans = get_plans_data()
     plan = plans.get(plan_id)
     if not plan:
         raise HTTPException(status_code=404, detail="План не найден")
 
     raw_domain = os.getenv('YOUR_DOMAIN') or os.getenv('RENDER_EXTERNAL_URL') or "http://localhost:8000"
-    # Удаляем слэш в конце, чтобы ссылки типа domain/success не превратились в domain//success
     current_domain = raw_domain.rstrip('/')
-
     price_in_cents = int(float(plan["price"]) * 100)
 
     try:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             metadata={
-                "username": username,
+                "username": user_data["username"],
                 "plan_id": plan_id
             },
             line_items=[{
@@ -221,40 +224,37 @@ async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/payment-success")
-async def payment_success(
-    plan_id: str, 
-    session_id: Optional[str] = None, # Делаем Optional, чтобы не было ошибки
-    db: Session = Depends(get_db), 
-    username: Optional[str] = Cookie(None)
-):
-    if not username: 
-        return RedirectResponse("/")
-
-    return RedirectResponse(url=f"/course/{plan_id}")
-
+async def payment_success(request: Request, plan_id: str):
+    return HTMLResponse(content=f"""
+        <html>
+            <body style="background: #0F172A; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
+                <div>
+                    <h1 style="color: #22C55E;">Оплата прошла успешно!</h1>
+                    <p>Активируем ваш доступ к курсу...</p>
+                    <a href="/course/{plan_id}" style="display: inline-block; padding: 12px 24px; background: #F97316; color: white; text-decoration: none; border-radius: 8px; margin-top: 20px;">Перейти к курсу</a>
+                    <script>
+                        setTimeout(() => {{ window.location.href = "/course/{plan_id}"; }}, 4000);
+                    </script>
+                </div>
+            </body>
+        </html>
+    """)
 
 @app.post("/webhook")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     payload = await request.body()
     sig_header = request.headers.get('stripe-signature')
-    endpoint_secret = os.getenv("STRIPE_WEBHOOK_SECRET") # Секрет из Stripe
 
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, endpoint_secret
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
         )
-    except ValueError as e:
-        # Невалидный payload
-        raise HTTPException(status_code=400, detail="Invalid payload")
-    except stripe.error.SignatureVerificationError as e:
-        # Невалидная подпись
-        raise HTTPException(status_code=400, detail="Invalid signature")
+    except Exception as e:
+        logging.error(f"Webhook error: {e}")
+        raise HTTPException(status_code=400, detail="Invalid webhook")
 
-    # Обрабатываем событие успешной оплаты
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        
-        # Извлекаем данные, которые мы передали при создании сессии
         metadata = session.get('metadata', {})
         username = metadata.get('username')
         plan_id = metadata.get('plan_id')
@@ -262,11 +262,11 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         if username and plan_id:
             user = db.query(User).filter(User.username == username).first()
             if user:
-                current_plans = (user.purchased_plans or "").split(",")
+                current_plans = [p.strip() for p in (user.purchased_plans or "").split(",") if p.strip()]
                 if plan_id not in current_plans:
                     current_plans.append(plan_id)
-                    user.purchased_plans = ",".join(filter(None, current_plans))
+                    user.purchased_plans = ",".join(current_plans)
                     db.commit()
-                    logging.info(f"КУРС АКТИВИРОВАН: Пользователь {username} купил {plan_id}")
+                    logging.info(f"✅ ДОСТУП ПРЕДОСТАВЛЕН: {username} -> {plan_id}")
 
     return {"status": "success"}
