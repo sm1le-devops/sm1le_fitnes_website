@@ -140,6 +140,31 @@ async def get_plan_page(request: Request, plan_id: str):
         "stripe_publishable_key": STRIPE_PUBLISHABLE_KEY 
     })
 
+@app.get("/course/{plan_id}", response_class=HTMLResponse)
+async def get_course_view(request: Request, plan_id: str, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
+    plans = get_plans_data()
+    if plan_id not in plans:
+        raise HTTPException(status_code=404, detail="Курс не найден")
+    
+    # 1. Проверяем, авторизован ли пользователь
+    if not username:
+        return RedirectResponse(url="/auth/login")
+    
+    user = db.query(User).filter(User.username == username).first()
+    
+    # 2. Проверяем, куплен ли этот курс (безопасность)
+    purchased_plans = (user.purchased_plans or "").split(",") if user else []
+    if plan_id not in purchased_plans:
+        # Если не куплено, отправляем обратно на страницу описания плана
+        return RedirectResponse(url=f"/plans/{plan_id}")
+
+    # 3. Если всё ок, показываем содержимое курса
+    return templates.TemplateResponse("course_view.html", {
+        "request": request,
+        "plan": plans[plan_id],
+        "plan_id": plan_id,
+        "user": user
+    })
 
 @app.post("/create-checkout-session/{plan_id}")
 async def create_checkout_session(plan_id: str, username: Optional[str] = Cookie(None)):
