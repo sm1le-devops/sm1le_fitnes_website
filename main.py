@@ -240,18 +240,19 @@ async def payment_success(request: Request, plan_id: str):
                     <h1 style="color: #22C55E;">Оплата прошла успешно!</h1>
                     <p>Активируем ваш доступ к курсу...</p>
                     
-                    <button onclick="window.location.replace('/course/{plan_id}')" style="display: inline-block; padding: 12px 24px; background: #F97316; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 8px; margin-top: 20px;">Перейти к курсу</button>
+                    <button onclick="goToCourse()" style="display: inline-block; padding: 12px 24px; background: #F97316; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 8px; margin-top: 20px;">Перейти к курсу</button>
                     
                     <script>
-                        // Используем replace вместо href
-                        setTimeout(() => {{ window.location.replace("/course/{plan_id}"); }}, 4000);
-                        
-                        // Дополнительная защита: если пользователь все же попал сюда по кнопке "назад", сразу кидаем на главную
-                        window.onpageshow = function(event) {{
-                            if (event.persisted) {{
-                                window.location.replace("/");
-                            }}
-                        }};
+                        function goToCourse() {{
+                            // Трюк: подменяем страницу Stripe/Success в истории на список планов
+                            window.history.replaceState(null, '', '/auth/welcome');
+                            
+                            // Теперь переходим на сам курс. Если нажать "Назад", браузер вернет на /auth/welcome
+                            window.location.href = "/course/{plan_id}";
+                        }}
+
+                        // Запускаем автоматически через 4 секунды
+                        setTimeout(goToCourse, 4000);
                     </script>
                 </div>
             </body>
