@@ -108,9 +108,7 @@
       position: relative;
       width: 100%;
       height: 220px;
-      /* Немного увеличим высоту */
       border-radius: 32px;
-      /* Более мягкие углы */
       margin-bottom: 24px;
       background-size: cover;
       background-position: center;
@@ -119,35 +117,49 @@
       flex-direction: column;
       justify-content: flex-end;
       padding: 24px;
-      /* Тонкая полупрозрачная рамка создает эффект стекла */
-      border: 1px solid rgba(255, 255, 255, 0.1);
+
+      /* ОРАНЖЕВАЯ ОБВОДКА (Цвет сайта) */
+      border: 4px solid var(--accent);
+
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
       background-color: var(--card-bg);
-      /* Тень, чтобы карточка "отрывалась" от фона */
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+      /* Мягкое оранжевое свечение для некупленных планов */
+      box-shadow:
+        0 0 15px rgba(249, 115, 22, 0.1),
+        0 10px 30px rgba(0, 0, 0, 0.4);
     }
 
     .plan-card:active {
       transform: scale(0.97);
+      filter: brightness(1.1);
     }
 
     .plan-card.unlocked {
-      border-color: rgba(34, 197, 94, 0.5);
-      /* Мягкое зеленое свечение вокруг всей карточки */
-      box-shadow: 0 0 20px rgba(34, 197, 94, 0.15), 0 10px 30px rgba(0, 0, 0, 0.4);
+      border-color: var(--success);
+      box-shadow:
+        0 0 20px rgba(34, 197, 94, 0.3),
+        inset 0 0 15px rgba(34, 197, 94, 0.2),
+        0 10px 30px rgba(0, 0, 0, 0.4);
     }
 
     .plan-card.unlocked:active {
       transform: scale(0.98);
       box-shadow: 0 0 30px rgba(34, 197, 94, 0.25);
+      filter: brightness(1.1);
     }
 
     .plan-card::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0) 40%, rgba(15, 23, 42, 0.7) 75%, rgba(15, 23, 42, 0.95) 90%, var(--bg) 100%);
+      /* Более сложный градиент: сверху почти прозрачно, снизу плотный темный цвет */
+      background: linear-gradient(180deg,
+          rgba(15, 23, 42, 0) 0%,
+          rgba(15, 23, 42, 0.2) 50%,
+          rgba(15, 23, 42, 0.8) 85%,
+          rgba(15, 23, 42, 0.95) 100%);
       z-index: 1;
     }
 
@@ -158,9 +170,10 @@
 
     .plan-info h3 {
       margin: 0;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 800;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      letter-spacing: -0.5px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
     }
 
     .plan-info p {
