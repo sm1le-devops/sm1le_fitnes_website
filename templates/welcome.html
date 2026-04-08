@@ -6,8 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Планы тренировок | sm1le.fitness</title>
   <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
-  <link rel="apple-touch-icon" href="/static/favicon.png">
-  <link rel="icon" sizes="192x192" href="/static/favicon.png">
   <style>
     :root {
       --bg: #0F172A;
@@ -35,37 +33,38 @@
       padding: 20px 16px 120px 16px;
       max-width: 500px;
       margin: 0 auto;
-      animation: fadeIn 0.5s ease-out;
+      animation: fadeIn 0.4s ease-out;
     }
 
     @keyframes fadeIn {
       from {
         opacity: 0;
+        transform: translateY(10px);
       }
 
       to {
         opacity: 1;
+        transform: translateY(0);
       }
     }
 
     .header {
-      text-align: center;
-      margin-bottom: 30px;
+      text-align: left;
+      margin-bottom: 25px;
+      padding-left: 4px;
     }
 
     .header h1 {
-      font-size: 28px;
+      font-size: 26px;
       margin: 0;
-      color: var(--accent);
       font-weight: 800;
-      text-transform: uppercase;
       letter-spacing: -0.5px;
     }
 
     .header p {
       color: var(--text-muted);
-      margin-top: 8px;
-      font-size: 16px;
+      margin: 5px 0 0 0;
+      font-size: 15px;
     }
 
     .plan-card {
@@ -74,32 +73,19 @@
       padding: 20px;
       margin-bottom: 16px;
       border: 1px solid rgba(255, 255, 255, 0.05);
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s, border-color 0.2s;
+      transition: transform 0.2s;
+      text-decoration: none;
+      display: block;
+      color: inherit;
     }
 
     .plan-card:active {
-      transform: scale(0.98);
-      border-color: rgba(249, 115, 22, 0.3);
-    }
-
-    .plan-badge {
-      position: absolute;
-      top: 12px;
-      right: -30px;
-      background: var(--accent);
-      color: white;
-      font-size: 10px;
-      font-weight: bold;
-      padding: 4px 40px;
-      transform: rotate(45deg);
-      box-shadow: 0 2px 10px rgba(249, 115, 22, 0.3);
+      transform: scale(0.97);
     }
 
     .plan-title {
       font-size: 20px;
-      font-weight: bold;
+      font-weight: 700;
       margin-bottom: 8px;
       display: block;
     }
@@ -107,28 +93,42 @@
     .plan-desc {
       color: var(--text-muted);
       font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 15px;
+      line-height: 1.4;
+      margin-bottom: 16px;
     }
 
-    .btn-select {
-      background: rgba(249, 115, 22, 0.1);
-      color: var(--accent);
-      border: 1px solid var(--accent);
-      padding: 12px 0;
-      width: 100%;
+    .plan-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .price-tag {
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .btn-action {
+      padding: 10px 18px;
       border-radius: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.3s;
-      display: block;
-      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
       text-decoration: none;
+      transition: 0.2s;
+      text-align: center;
     }
 
-    .btn-select:active {
+    .btn-buy {
       background: var(--accent);
       color: white;
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+    }
+
+    .btn-open {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+      border: 1px solid var(--success);
     }
 
     /* НИЖНЕЕ МЕНЮ */
@@ -139,13 +139,12 @@
       transform: translateX(-50%);
       width: calc(100% - 32px);
       max-width: 400px;
-      background: rgba(30, 41, 59, 0.85);
+      background: rgba(30, 41, 59, 0.8);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       display: flex;
       justify-content: space-around;
-      align-items: center;
-      padding: 12px 16px;
+      padding: 12px;
       border-radius: 24px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       z-index: 1000;
@@ -156,34 +155,27 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
       text-decoration: none;
       color: var(--text-muted);
-      transition: all 0.3s ease;
+      font-size: 11px;
+      font-weight: 500;
+      gap: 4px;
+    }
+
+    .nav-item svg {
+      width: 24px;
+      height: 24px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
     }
 
     .nav-item.active {
       color: var(--accent);
     }
 
-    .nav-item svg {
-      width: 24px;
-      height: 24px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .nav-item span {
-      font-size: 11px;
-      font-weight: 500;
-    }
-
     .nav-item.active svg {
-      fill: var(--accent);
-      filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.4));
+      filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.4));
     }
   </style>
 </head>
@@ -191,28 +183,39 @@
 <body>
 
   <div class="app-wrapper">
-    <div class="greeting">
-      <h1>Доступные программы</h1>
-      <p>Выберите направление для старта</p>
+    <div class="header">
+      <h1>Программы</h1>
+      <p>Выберите план для достижения цели</p>
     </div>
 
     <div class="plans-list">
       {% for plan_id, plan in plans.items() %}
-      <div class="plan-card-simple"
-        style="background: var(--card-bg); padding: 20px; border-radius: 20px; margin-bottom: 15px;">
-        <h3 style="margin: 0 0 10px 0;">{{ plan.title }}</h3>
-        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">{{ plan.description }}</p>
+      {# Универсальная проверка: работает и со списком, и со строкой #}
+      {% set is_bought = false %}
+      {% if user and user.purchased_plans %}
+      {% if plan_id in user.purchased_plans %}
+      {% set is_bought = true %}
+      {% endif %}
+      {% endif %}
 
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-weight: 700; color: var(--accent);">{{ plan.price }}</span>
-          <a href="/plans/{{ plan_id }}" class="btn-select"
-            style="background: var(--accent); color: white; text-decoration: none; padding: 8px 16px; border-radius: 10px; font-size: 14px; font-weight: 600;">
-            {% if user and plan_id in user.purchased_plans %}
-            Открыть курс
+      <div class="plan-card">
+        <span class="plan-title">{{ plan.title }}</span>
+        <p class="plan-desc">{{ plan.description }}</p>
+
+        <div class="plan-footer">
+          <div class="price-tag">
+            {% if is_bought %}
+            <span style="color: var(--success); font-size: 14px;">✓ Куплено</span>
             {% else %}
-            Подробнее
+            {{ plan.price }} ₽
             {% endif %}
-          </a>
+          </div>
+
+          {% if is_bought %}
+          <a href="/course/{{ plan_id }}" class="btn-action btn-open">Открыть</a>
+          {% else %}
+          <a href="/plans/{{ plan_id }}" class="btn-action btn-buy">Подробнее</a>
+          {% endif %}
         </div>
       </div>
       {% endfor %}

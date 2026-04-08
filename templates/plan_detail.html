@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ plan.title }} — sm1le.fitness</title>
     <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
-    <link rel="apple-touch-icon" href="/static/favicon.png">
-    <link rel="icon" sizes="192x192" href="/static/favicon.png">
     <style>
         :root {
             --bg: #0F172A;
@@ -15,6 +13,7 @@
             --accent: #F97316;
             --text: #F8FAFC;
             --text-muted: #94A3B8;
+            --success: #22C55E; /* ДОБАВИЛИ ЦВЕТ */
         }
 
         * {
@@ -37,20 +36,15 @@
             width: 100%;
             height: 35vh;
             background: url('{{ plan.image }}') center/cover no-repeat;
-            transition: height 0.3s ease;
         }
 
-        @media (min-width: 768px) {
-            .hero {
-                height: 50vh;
-            }
-        }
+        @media (min-width: 768px) { .hero { height: 50vh; } }
 
         .hero::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0) 50%, rgba(15, 23, 42, 0.8) 80%, var(--bg) 100%);
+            background: linear-gradient(180deg, transparent 50%, var(--bg) 100%);
         }
 
         .back-btn {
@@ -73,8 +67,8 @@
 
         .main-content {
             position: relative;
-            padding: 0 20px 120px 20px;
-            margin-top: -60px;
+            padding: 0 20px 140px 20px; /* Увеличили нижний отступ, чтобы кнопка не закрывала текст */
+            margin-top: -40px;
             z-index: 2;
         }
 
@@ -88,28 +82,19 @@
             font-weight: 700;
             margin-bottom: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         h1 {
             font-size: 28px;
             font-weight: 800;
             margin: 0 0 12px 0;
-            letter-spacing: -0.5px;
-            line-height: 1.2;
-        }
-
-        .description {
-            color: var(--text-muted);
-            font-size: 15px;
-            margin-bottom: 20px;
         }
 
         .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-bottom: 24px;
+            margin: 20px 0;
         }
 
         .info-card {
@@ -124,26 +109,19 @@
             font-size: 10px;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
             margin-bottom: 2px;
         }
 
-        .info-card strong {
-            font-size: 15px;
-            color: var(--text);
-        }
-
-        .action-bar {
+        .action-bar { /* ИСПРАВЛЕНО: Теперь класс соответствует HTML */
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            padding: 20px;
-            background: linear-gradient(to top, var(--bg) 70%, transparent);
+            padding: 24px 20px;
+            background: linear-gradient(to top, var(--bg) 80%, transparent);
             z-index: 100;
         }
 
-        /* Изменено на button для работы с JS */
         .buy-button {
             display: flex;
             justify-content: space-between;
@@ -152,23 +130,22 @@
             color: white;
             border: none;
             width: 100%;
-            padding: 16px 20px;
+            padding: 18px 24px;
             border-radius: 20px;
             font-weight: 800;
             font-size: 16px;
-            box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4);
+            box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3);
             cursor: pointer;
-            transition: transform 0.2s;
+            text-decoration: none;
+            transition: 0.2s;
         }
 
-        .buy-button:active {
-            transform: scale(0.96);
-        }
+        .buy-button:active { transform: scale(0.97); }
 
         .price-label {
             background: rgba(255, 255, 255, 0.2);
-            padding: 4px 10px;
-            border-radius: 10px;
+            padding: 4px 12px;
+            border-radius: 12px;
             font-size: 14px;
         }
     </style>
@@ -177,9 +154,8 @@
 <body>
 
     <div class="hero">
-        <a href="/" class="back-btn">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                stroke-linecap="round" stroke-linejoin="round">
+        <a href="javascript:history.back()" class="back-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M15 18l-6-6 6-6" />
             </svg>
         </a>
@@ -188,7 +164,7 @@
     <div class="main-content">
         <div class="category-tag">План тренировок</div>
         <h1>{{ plan.title }}</h1>
-        <p class="description">{{ plan.full_info }}</p>
+        <p style="color: var(--text-muted); font-size: 15px;">{{ plan.full_info }}</p>
 
         <div class="info-grid">
             <div class="info-card"><span>Срок</span><strong>{{ plan.duration }}</strong></div>
@@ -197,70 +173,58 @@
             <div class="info-card"><span>Доступ</span><strong>Навсегда</strong></div>
         </div>
 
-        <h3>Что включено:</h3>
-        <ul style="color: var(--text-muted); padding-left: 20px;">
+        <h3 style="margin-top: 30px;">Что включено:</h3>
+        <ul style="color: var(--text-muted); padding-left: 20px; line-height: 1.8;">
             <li>Видео-инструкции к упражнениям</li>
             <li>Рекомендации по питанию</li>
             <li>Поддержка в чате 24/7</li>
         </ul>
     </div>
 
-    <div class="fixed-bottom">
-        {% if is_purchased %}
-        <button onclick="window.location.href='/course/{{ plan_id }}'" class="buy-button"
-            style="background: #22C55E; box-shadow: 0 10px 25px rgba(34, 197, 94, 0.4);">
+    <div class="action-bar"> {% if is_purchased %}
+        <a href="/course/{{ plan_id }}" class="buy-button" style="background: var(--success); justify-content: center;">
             <span>Открыть программу</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14m-7-7 7 7-7 7" />
-            </svg>
-        </button>
+        </a>
         {% else %}
         <button id="checkout-button" class="buy-button">
             <span>Начать программу</span>
-            <span class="price-label">{{ plan.price }}</span>
+            <span class="price-label">{{ plan.price }} ₽</span>
         </button>
         {% endif %}
     </div>
 
+    {% if not is_purchased %}
     <script src="https://js.stripe.com/v3/"></script>
     <script>
-        const stripe = Stripe('{{ stripe_publishable_key }}');
-        const checkoutButton = document.getElementById('checkout-button');
+        const key = '{{ stripe_publishable_key }}';
+        if (key) {
+            const stripe = Stripe(key);
+            const checkoutButton = document.getElementById('checkout-button');
 
-        // Добавляем проверку: вешать обработчик только если кнопка существует
-        if (checkoutButton) {
             checkoutButton.addEventListener('click', async () => {
+                checkoutButton.innerText = 'Загрузка...';
+                checkoutButton.disabled = true;
                 try {
-                    // Вибрация для отклика (на смартфонах)
-                    if (window.navigator.vibrate) window.navigator.vibrate(10);
-
-                    const response = await fetch('/create-checkout-session/{{ plan_id }}', {
-                        method: 'POST',
-                    });
-
+                    const response = await fetch('/create-checkout-session/{{ plan_id }}', { method: 'POST' });
                     if (response.status === 401) {
                         window.location.href = '/auth/login';
                         return;
                     }
-
                     const session = await response.json();
-
                     if (session.id) {
-                        const result = await stripe.redirectToCheckout({
-                            sessionId: session.id,
-                        });
-                        if (result.error) alert(result.error.message);
+                        await stripe.redirectToCheckout({ sessionId: session.id });
                     } else {
                         alert('Ошибка: ' + (session.detail || 'Не удалось создать сессию'));
+                        checkoutButton.disabled = false;
+                        checkoutButton.innerHTML = '<span>Начать программу</span><span class="price-label">{{ plan.price }} ₽</span>';
                     }
                 } catch (err) {
-                    console.error(err);
-                    alert('Произошла ошибка при переходе к оплате');
+                    alert('Ошибка сети');
+                    checkoutButton.disabled = false;
                 }
             });
         }
     </script>
+    {% endif %}
 </body>
-
 </html>
