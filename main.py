@@ -30,7 +30,9 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+if not STRIPE_PUBLISHABLE_KEY:
+    logging.error("КРИТИЧЕСКАЯ ОШИБКА: STRIPE_PUBLISHABLE_KEY не найден в переменных окружения!")
 templates = Jinja2Templates(directory="templates")
 templates.env.filters["tojson"] = lambda data: json.dumps(data, ensure_ascii=False)
 
