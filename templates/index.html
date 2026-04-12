@@ -334,9 +334,9 @@
 
 <body class="no-scroll">
   <div id="video-splash">
-    <video id="welcome-video" autoplay muted playsinline webkit-playsinline preload="auto"
-      poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+    <video id="welcome-video" autoplay muted playsinline webkit-playsinline preload="auto">
       <source src="/static/welcome.mp4" type="video/mp4">
+      Ваш браузер не поддерживает видео.
     </video>
 
     <div id="video-curtain"></div>
@@ -435,57 +435,60 @@
     const video = document.getElementById('welcome-video');
     const curtain = document.getElementById('video-curtain');
 
-    // 1. ПРЕДОХРАНИТЕЛЬ: Если видео не запустится за 3 секунды, закрываем заставку принудительно
-    const safetyExit = setTimeout(() => {
-      console.log("Fallback: video took too long, closing splash.");
-      closeSplash();
-    }, 3000);
+    // Функция для плавного появления видео
+    function showVideo() {
+      video.style.opacity = '1';
+      curtain.style.opacity = '0';
+    }
 
-    // 2. Основная магия проявления видео
-    video.addEventListener('timeupdate', function () {
-      if (video.currentTime > 0.2) {
-        video.style.opacity = '1';
-        curtain.style.opacity = '0';
-        clearTimeout(safetyExit); // Видео пошло, отменяем предохранитель
-      }
-    });
-
-    // 3. Логика закрытия заставки
+    // Функция для полного закрытия заставки
     function closeSplash() {
       splash.style.opacity = '0';
       setTimeout(() => {
         splash.style.display = 'none';
         document.body.classList.remove('no-scroll');
-      }, 800);
+      }, 600);
     }
 
-    video.onended = closeSplash;
-    video.onerror = () => {
-      console.log("Video error, skipping splash.");
-      closeSplash();
-    };
+    // 1. Как только браузер понял, что видео можно играть — плавно показываем его
+    video.addEventListener('canplay', showVideo);
 
-    // 4. Принудительный старт
-    window.addEventListener('load', () => {
-      video.play().catch(() => {
-        console.log("Autoplay blocked, skipping splash.");
+    // Дополнительная проверка: если видео уже начало играть (для быстрых сетей)
+    video.addEventListener('playing', showVideo);
+
+    // 2. Если видео закончилось или произошла ошибка — закрываем заставку
+    video.onended = closeSplash;
+    video.onerror = closeSplash;
+
+    // 3. ЖЕСТКИЙ ТАЙМЕР (Fallback)
+    // Если через 2 секунды видео так и не начало показывать картинку — убираем заставку
+    setTimeout(() => {
+      if (getComputedStyle(curtain).opacity !== '0') {
+        console.log("Видео грузится слишком долго — пропускаем");
         closeSplash();
-        clearTimeout(safetyExit);
-      });
+      }
+    }, 2000);
+
+    // 4. Запуск проигрывания
+    window.addEventListener('load', () => {
+      const playPromise = video.play();
+
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Если автоплей заблокирован (режим экономии или Safari)
+          closeSplash();
+        });
+      }
     });
 
-    // Логика выбора плана
+    // Твоя логика выбора плана (без изменений)
     function selectPlan(planId) {
       if (window.navigator.vibrate) window.navigator.vibrate(10);
-      const authElement = document.getElementById('auth-data');
-      const isAuthorized = authElement.getAttribute('data-is-authorized') === 'true';
+      const isAuthorized = document.getElementById('auth-data').getAttribute('data-is-authorized') === 'true';
       const card = document.getElementById(`plan-${planId}`);
-
-      if (isAuthorized && card && card.classList.contains('unlocked')) {
-        window.location.href = `/course/${planId}`;
-      } else {
-        window.location.href = `/plans/${planId}`;
-      }
+      window.location.href = (isAuthorized && card?.classList.contains('unlocked'))
+        ? `/course/${planId}`
+        : `/plans/${planId}`;
     }
   </script>
 </body>
