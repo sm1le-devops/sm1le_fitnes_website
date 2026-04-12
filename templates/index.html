@@ -435,16 +435,22 @@
     const video = document.getElementById('welcome-video');
     const curtain = document.getElementById('video-curtain');
 
-    // Главная магия: убираем белую шторку только когда видео ТОЧНО начало играть
-    // currentTime > 0.1 гарантирует, что нулевой (черный) кадр уже прошел
+    // 1. ПРЕДОХРАНИТЕЛЬ: Если видео не запустится за 3 секунды, закрываем заставку принудительно
+    const safetyExit = setTimeout(() => {
+      console.log("Fallback: video took too long, closing splash.");
+      closeSplash();
+    }, 3000);
+
+    // 2. Основная магия проявления видео
     video.addEventListener('timeupdate', function () {
       if (video.currentTime > 0.2) {
         video.style.opacity = '1';
         curtain.style.opacity = '0';
+        clearTimeout(safetyExit); // Видео пошло, отменяем предохранитель
       }
     });
 
-    // Логика закрытия всей заставки
+    // 3. Логика закрытия заставки
     function closeSplash() {
       splash.style.opacity = '0';
       setTimeout(() => {
@@ -454,15 +460,17 @@
     }
 
     video.onended = closeSplash;
-    video.onerror = closeSplash;
+    video.onerror = () => {
+      console.log("Video error, skipping splash.");
+      closeSplash();
+    };
 
-    // Принудительный старт для капризных мобильных браузеров
+    // 4. Принудительный старт
     window.addEventListener('load', () => {
       video.play().catch(() => {
-        console.log("Autoplay prevented by browser");
-        // Если браузер запретил автоплей (например, режим экономии энергии),
-        // просто сразу закрываем заставку, чтобы не морозить пользователя
+        console.log("Autoplay blocked, skipping splash.");
         closeSplash();
+        clearTimeout(safetyExit);
       });
     });
 
