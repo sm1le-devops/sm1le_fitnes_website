@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>sm1le.fitness — Твой путь к результату</title>
+  <title>sm1le.fitness — Твой путь к лучшей версии себя</title>
   <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
   <link rel="apple-touch-icon" href="/static/favicon.png">
   <link rel="icon" sizes="192x192" href="/static/favicon.png">
@@ -292,7 +292,7 @@
       inset: 0;
       background-color: #FFFFFF !important;
       z-index: 9999;
-      display: flex;
+      display: none;
       justify-content: center;
       align-items: center;
       transition: opacity 0.8s ease;
@@ -332,7 +332,7 @@
   </style>
 </head>
 
-<body class="no-scroll">
+<body>
   <div id="video-splash">
     <video id="welcome-video" autoplay muted playsinline webkit-playsinline preload="auto">
       <source src="/static/welcome.MP4" type="video/mp4">
@@ -435,13 +435,28 @@
     const video = document.getElementById('welcome-video');
     const curtain = document.getElementById('video-curtain');
 
-    // Функция для плавного появления видео
+    // КЛЮЧЕВАЯ ПРОВЕРКА: Видел ли пользователь видео в этой сессии?
+    const hasSeenSplash = sessionStorage.getItem('splashShown');
+
+    if (!hasSeenSplash) {
+      // Если НЕ видел: показываем заставку и блокируем скролл
+      splash.style.display = 'flex';
+      document.body.classList.add('no-scroll');
+
+      // Помечаем, что при следующей загрузке видео показывать не надо
+      sessionStorage.setItem('splashShown', 'true');
+    } else {
+      // Если УЖЕ видел: просто выходим из функции показа, заставка останется display: none
+      console.log("Видео уже просмотрено в этой сессии. Пропускаем.");
+    }
+
+    // --- Логика работы видео (сработает только если splash отображен) ---
+
     function showVideo() {
       video.style.opacity = '1';
       curtain.style.opacity = '0';
     }
 
-    // Функция для полного закрытия заставки
     function closeSplash() {
       splash.style.opacity = '0';
       setTimeout(() => {
@@ -450,36 +465,26 @@
       }, 600);
     }
 
-    // 1. Как только браузер понял, что видео можно играть — плавно показываем его
-    video.addEventListener('canplay', showVideo);
+    if (!hasSeenSplash) {
+      video.addEventListener('canplay', showVideo);
+      video.addEventListener('playing', showVideo);
+      video.onended = closeSplash;
+      video.onerror = closeSplash;
 
-    // Дополнительная проверка: если видео уже начало играть (для быстрых сетей)
-    video.addEventListener('playing', showVideo);
-
-    // 2. Если видео закончилось или произошла ошибка — закрываем заставку
-    video.onended = closeSplash;
-    video.onerror = closeSplash;
-
-    // 3. ЖЕСТКИЙ ТАЙМЕР (Fallback)
-    // Если через 2 секунды видео так и не начало показывать картинку — убираем заставку
-    setTimeout(() => {
-      if (getComputedStyle(curtain).opacity !== '0') {
-        console.log("Видео грузится слишком долго — пропускаем");
-        closeSplash();
-      }
-    }, 2000);
-
-    // 4. Запуск проигрывания
-    window.addEventListener('load', () => {
-      const playPromise = video.play();
-
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Если автоплей заблокирован (режим экономии или Safari)
+      // Fallback таймер (увеличил до 3 секунд на всякий случай)
+      setTimeout(() => {
+        if (getComputedStyle(curtain).opacity !== '0') {
           closeSplash();
-        });
-      }
-    });
+        }
+      }, 3000);
+
+      window.addEventListener('load', () => {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => closeSplash());
+        }
+      });
+    }
 
     // Твоя логика выбора плана (без изменений)
     function selectPlan(planId) {
