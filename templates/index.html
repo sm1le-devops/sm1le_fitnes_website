@@ -285,10 +285,63 @@
       padding: 20px 0;
       opacity: 0.5;
     }
+
+
+    #video-splash {
+      position: fixed;
+      inset: 0;
+      background-color: #FFFFFF !important;
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.8s ease;
+    }
+
+    #welcome-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #FFFFFF !important;
+      z-index: 1;
+      opacity: 0.01;
+      /* Видео почти невидимо до старта */
+      transition: opacity 0.4s ease;
+    }
+
+    #video-curtain {
+      position: absolute;
+      inset: 0;
+      background-color: #FFFFFF;
+      z-index: 2;
+      opacity: 1;
+      /* Полностью белая шторка */
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+
+
+    video::-webkit-media-controls-panel {
+      background-color: #FFFFFF !important;
+    }
+
+    /* Класс для блокировки прокрутки основной страницы, пока идет видео */
+    body.no-scroll {
+      overflow: hidden;
+    }
   </style>
 </head>
 
-<body>
+<body class="no-scroll">
+  <div id="video-splash">
+    <video id="welcome-video" autoplay muted playsinline webkit-playsinline preload="auto"
+      poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+      <source src="/static/welcome.mp4" type="video/mp4">
+    </video>
+
+    <div id="video-curtain"></div>
+
+  </div>
 
   <div class="app-wrapper">
     <header class="top-header">
@@ -378,20 +431,51 @@
   </div>
 
   <script>
+    const splash = document.getElementById('video-splash');
+    const video = document.getElementById('welcome-video');
+    const curtain = document.getElementById('video-curtain');
+
+    // Главная магия: убираем белую шторку только когда видео ТОЧНО начало играть
+    // currentTime > 0.1 гарантирует, что нулевой (черный) кадр уже прошел
+    video.addEventListener('timeupdate', function () {
+      if (video.currentTime > 0.2) {
+        video.style.opacity = '1';
+        curtain.style.opacity = '0';
+      }
+    });
+
+    // Логика закрытия всей заставки
+    function closeSplash() {
+      splash.style.opacity = '0';
+      setTimeout(() => {
+        splash.style.display = 'none';
+        document.body.classList.remove('no-scroll');
+      }, 800);
+    }
+
+    video.onended = closeSplash;
+    video.onerror = closeSplash;
+
+    // Принудительный старт для капризных мобильных браузеров
+    window.addEventListener('load', () => {
+      video.play().catch(() => {
+        console.log("Autoplay prevented by browser");
+        // Если браузер запретил автоплей (например, режим экономии энергии),
+        // просто сразу закрываем заставку, чтобы не морозить пользователя
+        closeSplash();
+      });
+    });
+
+    // Логика выбора плана
     function selectPlan(planId) {
       if (window.navigator.vibrate) window.navigator.vibrate(10);
-
-      // Читаем данные из скрытого дива (это работает всегда без ошибок синтаксиса)
       const authElement = document.getElementById('auth-data');
       const isAuthorized = authElement.getAttribute('data-is-authorized') === 'true';
-
       const card = document.getElementById(`plan-${planId}`);
 
-      // Проверяем: залогинен ЛИ и куплен ЛИ план (есть ли класс unlocked)
       if (isAuthorized && card && card.classList.contains('unlocked')) {
         window.location.href = `/course/${planId}`;
       } else {
-        // Если гость или не куплено — идем на описание
         window.location.href = `/plans/${planId}`;
       }
     }
