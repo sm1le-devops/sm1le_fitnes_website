@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ plan.title if plan else 'Курс' }} — sm1le.fitness</title>
     <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --bg: #0F172A;
@@ -200,9 +201,10 @@
             text-decoration: none;
             margin-bottom: 8px;
         }
-        
+
         .back-btn:hover {
-            color: var(--accent); /* Немного интерактива при наведении */
+            color: var(--accent);
+            /* Немного интерактива при наведении */
         }
     </style>
 </head>
@@ -232,8 +234,19 @@
             </div>
         </div>
         {% else %}
-        <div style="padding-bottom: 10px;">
-            <span class="purchased-badge">✓ ДОСТУП ОПЛАЧЕН</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <span class="purchased-badge" style="margin-bottom: 0;">✓ ДОСТУП ОПЛАЧЕН</span>
+
+            <a href="/course/{{ plan_id }}/download" class="day-btn"
+                style="text-decoration: none; padding: 6px 12px; font-size: 0.8rem; background: #22C55E; border-color: #22C55E; display: flex; align-items: center; gap: 5px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                PDF
+            </a>
         </div>
 
         <div class="day-selector" id="daySelector">
@@ -251,20 +264,25 @@
     </div>
 
     <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
-        // Данные плана
-        const planData = {% if plan_json_safe %}{{ plan_json_safe | safe }}{% else %}null{% endif %};
+        // 1. Исправленный синтаксис получения JSON из Jinja2
+        // Убраны лишние пробелы в {{ plan_json | safe }}, которые ломали JavaScript
+        const planData = {% if plan_json %}{{ plan_json | safe }}{% else %}null{% endif %};
 
-        // Логика покупки
+        // 2. Логика покупки
         const stripeBtn = document.getElementById('stripe-button');
         if (stripeBtn) {
-            const stripe = Stripe('{{ stripe_pub_key }}');
+            // Используем ключ, переданный из FastAPI
+            const stripe = Stripe('{{ stripe_publishable_key }}');
+
             stripeBtn.addEventListener('click', async () => {
                 stripeBtn.innerText = 'Загрузка...';
                 stripeBtn.disabled = true;
                 try {
                     const response = await fetch('/create-checkout-session/{{ plan_id }}', { method: 'POST' });
                     const session = await response.json();
+
                     if (session.id) {
                         await stripe.redirectToCheckout({ sessionId: session.id });
                     } else {
@@ -273,22 +291,37 @@
                 } catch (e) {
                     alert('Ошибка связи с сервером');
                 } finally {
+                    // Возвращаем кнопку в исходное состояние при любой ошибке
                     stripeBtn.innerText = 'КУПИТЬ КУРС';
                     stripeBtn.disabled = false;
                 }
             });
         }
 
-        // Твоя логика отображения упражнений
+        // 3. Функция отображения тренировок
         function showDay(index) {
             const container = document.getElementById('exerciseList');
-            if (!container) return; // Если не куплено, контейнера нет
+            if (!container) return;
 
+            // Если план пришел в виде текста (Markdown от ИИ)
+            if (typeof planData === 'string') {
+                container.innerHTML = `
+                    <div class="exercise-card" style="line-height: 1.6; font-size: 1.05rem;">
+                        ${marked.parse(planData)}
+                    </div>
+                `;
+                const selector = document.getElementById('daySelector');
+                if (selector) selector.style.display = 'none';
+                return;
+            }
+
+            // Если данных нет
             if (!planData || !planData.days || !planData.days[index]) {
                 container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--muted);"><h3>Скоро здесь будет тренировка</h3></div>`;
                 return;
             }
 
+            // Переключение активной кнопки дня
             document.querySelectorAll('.day-btn').forEach((btn, i) => {
                 btn.classList.toggle('active', i === index);
             });
@@ -324,10 +357,15 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Инициализация (только если куплено)
+        // 4. Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', () => {
             if (document.getElementById('exerciseList')) {
-                if (planData && planData.days && planData.days.length > 0) {
+                // Если это текст от ИИ - показываем сразу
+                if (typeof planData === 'string') {
+                    showDay(0);
+                }
+                // Если это обычный план с днями - показываем первый день
+                else if (planData && planData.days && planData.days.length > 0) {
                     showDay(0);
                 }
             }

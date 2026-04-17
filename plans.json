@@ -5,27 +5,8 @@
     "intensity": "Высокая",
     "price": "2600",
     "image": "/static/uploads/photo2.png",
-    "description": "Максимальное жиросжигание за короткий срок.",
-    "full_info": "Эта программа включает в себя HIIT тренировки и план питания для достижения быстрого результата.",
-    "days": [
-      {
-        "title": "Жиросжигающая Full Body",
-        "description": "Круговая тренировка на все группы мыщц для разгона метаболизма.",
-        "exercises": [
-          {"name": "Берпи", "sets": 3, "reps": "15 раз", "image_url": "/static/uploads/inside1.jpg"},
-          {"name": "Приседания с выпрыгиванием", "sets": 4, "reps": "20 раз", "image_url": "/static/uploads/inside2.jpg"},
-          {"name": "Скалолаз (Mountain Climbers)", "sets": 3, "reps": "45 сек", "image_url": "/static/uploads/inside3.jpg"}
-        ]
-      },
-      {
-        "title": "Кардио и Пресс",
-        "description": "Акцент на мышцы кора и выносливость.",
-        "exercises": [
-          {"name": "Скручивания", "sets": 3, "reps": "25 раз", "image_url": "/static/uploads/inside3.jpg"},
-          {"name": "Планка", "sets": 3, "reps": "60 сек", "image_url": "/static/uploads/inside1.jpg"}
-        ]
-      }
-    ]
+    "description": "Персональный план жиросжигания, созданный ИИ под твои параметры.",
+    "full_info": "После оплаты вы пройдете подробное анкетирование. Наш ИИ проанализирует ваш опыт, доступное оборудование и травмы, чтобы составить максимально эффективный план."
   },
   "muscle_gain": {
     "title": "Набор массы: PRO",
@@ -33,26 +14,7 @@
     "intensity": "Максимальная",
     "price": "2900",
     "image": "/static/uploads/photo1.png",
-    "description": "Увеличение силы и мышечного объема.",
-    "full_info": "Силовые тренировки с акцентом на прогрессию весов и технику выполнения.",
-    "days": [
-      {
-        "title": "День А: Грудь и Спина",
-        "description": "Работа над антагонистами для максимального пампа.",
-        "exercises": [
-          {"name": "Жим штанги лежа", "sets": 4, "reps": "8-10", "image_url": "/static/uploads/inside1.jpg"},
-          {"name": "Тяга штанги в наклоне", "sets": 4, "reps": "10-12", "image_url": "/static/uploads/inside2.jpg"},
-          {"name": "Отжимания на брусьях", "sets": 3, "reps": "до отказа", "image_url": "/static/uploads/inside3.jpg"}
-        ]
-      },
-      {
-        "title": "День Б: Ноги и Плечи",
-        "description": "Тяжелая база для стимуляции гормонального роста.",
-        "exercises": [
-          {"name": "Приседания со штангой", "sets": 4, "reps": "8", "image_url": "/static/uploads/inside1.jpg"},
-          {"name": "Армейский жим", "sets": 3, "reps": "10", "image_url": "/static/uploads/inside2.jpg"}
-        ]
-      }
-    ]
+    "description": "Научный подход к росту мышц с учетом твоей генетики.",
+    "full_info": "Программа включает в себя расчет КБЖУ и тренировочный план, адаптированный под твой стаж занятий."
   }
 }

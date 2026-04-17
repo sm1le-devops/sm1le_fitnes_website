@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, JSON  # Добавили JSON
 from database import Base
 from datetime import datetime
 
@@ -18,7 +18,10 @@ class User(Base):
     
     # Цели и доступ
     target = Column(String(50), nullable=True)
-    # Храним ID купленных планов через запятую, например: "weight_loss,muscle_gain"
     purchased_plans = Column(String, default="") 
+    
+    # --- НОВОЕ ПОЛЕ ---
+    # Здесь будут лежать планы в формате: {"plan_id": "Текст от нейросети"}
+    generated_plans = Column(JSON, default={}) 
     
     created_at = Column(DateTime, default=datetime.utcnow)

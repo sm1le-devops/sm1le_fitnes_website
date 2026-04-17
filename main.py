@@ -1,14 +1,17 @@
 import os
 import json
+import io
 import stripe
 import logging
 from typing import Optional
 from contextlib import asynccontextmanager
-
+from routers.ai_service import generate_training_plan
+from fastapi import Form
+from fpdf import FPDF
 from fastapi import FastAPI, Request, Depends, Cookie, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi_limiter import FastAPILimiter
 from dotenv import load_dotenv
@@ -38,23 +41,44 @@ stripe.api_key = STRIPE_SECRET_KEY
 if not STRIPE_PUBLISHABLE_KEY or not STRIPE_SECRET_KEY:
     logging.error("КРИТИЧЕСКАЯ ОШИБКА: Ключи Stripe не найдены в .env!")
 
-# Глобальный кэш для планов
-_PLANS_CACHE = None
+
 
 # --- Вспомогательная логика ---
-
-def get_plans_data():
-    """Загружает планы из JSON с использованием кэша."""
-    global _PLANS_CACHE
-    if _PLANS_CACHE is not None:
-        return _PLANS_CACHE
+def load_plans():
     try:
         with open("plans.json", "r", encoding="utf-8") as f:
-            _PLANS_CACHE = json.load(f)
-            return _PLANS_CACHE
-    except Exception as e:
-        logging.error(f"Ошибка чтения plans.json: {e}")
+            return json.load(f)
+    except FileNotFoundError:
+        print("Ошибка: файл plans.json не найден!")
         return {}
+
+PLANS = load_plans()
+
+def create_pdf_buffer(plan_text):
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # ПУТЬ К ШРИФТУ
+    font_path = "static/fonts/DejaVuSans.ttf" 
+    if os.path.exists(font_path):
+        pdf.add_font('DejaVu', '', font_path)
+        pdf.set_font('DejaVu', '', 12)
+    else:
+        pdf.set_font("Arial", size=12)
+
+    for line in plan_text.split('\n'):
+        pdf.multi_cell(0, 10, txt=line)
+    
+    # Для fpdf2 (современная библиотека):
+    # output() без аргументов возвращает байты
+    pdf_bytes = pdf.output()
+    
+    # Если вы используете старую fpdf (v1), используйте:
+    # return pdf.output(dest='S').encode('latin-1')
+    
+    return pdf_bytes
+    
+
 
 async def get_current_active_user(
     db: Session = Depends(get_db), 
@@ -132,26 +156,37 @@ app.include_router(password_reset.router, prefix="/auth", tags=["Password Reset"
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, user_data=Depends(get_current_active_user)):
-    plans = get_plans_data()
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": user_data,
-        "plans": plans
+        "plans": PLANS 
     })
 
 @app.get("/auth/welcome", response_class=HTMLResponse)
 async def welcome_page(request: Request, user_data=Depends(get_current_active_user)):
-    plans = get_plans_data()
     return templates.TemplateResponse("welcome.html", {
         "request": request,
         "user": user_data,
-        "plans": plans
+        "plans": PLANS 
     })
 
+@app.get("/questionnaire", response_class=HTMLResponse)
+async def get_questionnaire(request: Request, plan_id: str, user_data=Depends(get_current_active_user)):
+    if not user_data:
+        return RedirectResponse(url="/auth/login")
+    
+    if plan_id not in PLANS: # Используем переменную
+        raise HTTPException(status_code=404, detail="План не найден")
+        
+    return templates.TemplateResponse("questionnaire.html", {
+        "request": request, 
+        "plan_id": plan_id
+    })
+    
 @app.get("/plans/{plan_id}", response_class=HTMLResponse)
 async def get_plan_page(request: Request, plan_id: str, user_data=Depends(get_current_active_user)):
-    plans = get_plans_data()
-    if plan_id not in plans:
+    # Проверяем наличие плана в глобальной переменной
+    if plan_id not in PLANS:
         raise HTTPException(status_code=404, detail="План не найден")
     
     is_purchased = False
@@ -160,46 +195,122 @@ async def get_plan_page(request: Request, plan_id: str, user_data=Depends(get_cu
     
     return templates.TemplateResponse("plan_detail.html", {
         "request": request, 
-        "plan": plans[plan_id], 
+        "plan": PLANS[plan_id], 
         "plan_id": plan_id,
         "is_purchased": is_purchased,
         "stripe_publishable_key": STRIPE_PUBLISHABLE_KEY 
     })
 
-@app.get("/course/{plan_id}", response_class=HTMLResponse)
-async def get_course_view(request: Request, plan_id: str, user_data=Depends(get_current_active_user)):
-    plans = get_plans_data()
-    if plan_id not in plans:
-        raise HTTPException(status_code=404, detail="Курс не найден")
-    
-    if not user_data:
-        return RedirectResponse(url="/auth/login")
-    
-    # Если пользователь не покупал этот план, отправляем на страницу описания
-    if plan_id not in user_data["purchased_plans"]:
-        return RedirectResponse(url=f"/plans/{plan_id}")
 
-    # Подготавливаем данные для JS (список упражнений)
-    plan_info = plans[plan_id]
-    plan_json_safe = json.dumps(plan_info, ensure_ascii=False)
+@app.get("/course/{plan_id}/download")
+async def download_pdf(
+    plan_id: str, 
+    user_data=Depends(get_current_active_user)
+):
+    if not user_data:
+        raise HTTPException(status_code=401)
+
+    user = user_data["obj"]
+    plan_text = user.generated_plans.get(plan_id)
+
+    if not plan_text:
+        raise HTTPException(status_code=404, detail="Текст плана не найден")
+
+    # Используем твою функцию-помощник (убедись, что шрифт по пути static/fonts/...)
+    pdf_bytes = create_pdf_buffer(plan_text)
+    
+    return Response(
+        content=pdf_bytes, 
+        media_type="application/pdf", 
+        headers={"Content-Disposition": f"attachment; filename=plan_{plan_id}.pdf"}
+    )
+
+@app.get("/course/{plan_id}", response_class=HTMLResponse)
+async def view_course(request: Request, plan_id: str, db: Session = Depends(get_db)):
+    username = request.cookies.get("username")
+    user = db.query(User).filter(User.username == username).first() if username else None
+    
+    # Пытаемся получить данные курса по его ID из нашего словаря (загруженного из файла)
+    course_catalog_data = PLANS.get(plan_id)
+    
+    if not course_catalog_data:
+        raise HTTPException(status_code=404, detail="Программа не найдена в каталоге")
+
+    is_purchased = False
+    generated_plan = None
+
+    if user:
+        # 1. Проверяем куплен ли курс (строка через запятую преобразуется в список)
+        purchased_list = [p.strip() for p in (user.purchased_plans or "").split(",") if p.strip()]
+        is_purchased = plan_id in purchased_list
+        
+        # 2. Если курс оплачен, проверяем наличие сгенерированного ИИ контента
+        if is_purchased:
+            # В модели User поле generated_plans — это JSON-столбец (словарь)
+            generated_plan = (user.generated_plans or {}).get(plan_id)
+            
+            # 3. Если оплачено, но ИИ еще не составил план — отправляем на анкету
+            if not generated_plan:
+                return RedirectResponse(url=f"/questionnaire?plan_id={plan_id}")
 
     return templates.TemplateResponse("course_view.html", {
         "request": request,
-        "plan": plan_info,
+        "plan": course_catalog_data,  # Маркетинговые данные из JSON (цена, заголовок)
         "plan_id": plan_id,
-        "user": user_data["obj"],
-        "is_purchased": True,  # Обязательно передаем True, раз мы прошли проверку выше
-        "stripe_pub_key": STRIPE_PUBLISHABLE_KEY, # Чтобы Stripe не ругался на пустой ключ
-        "plan_json_safe": plan_json_safe # Чтобы JS видел упражнения
+        "is_purchased": is_purchased,
+        "plan_json": json.dumps(generated_plan) if generated_plan else "null", # Текст от ИИ
+        "stripe_publishable_key": STRIPE_PUBLISHABLE_KEY
     })
+    
+
+@app.post("/generate-plan/{plan_id}")
+async def process_questionnaire(
+    plan_id: str,
+    gender: str = Form(...),
+    weight: float = Form(...),
+    height: float = Form(...),
+    age: int = Form(...),
+    experience: str = Form(...),
+    equipment: str = Form(...),
+    injuries: str = Form(...),
+    db: Session = Depends(get_db),
+    user_data=Depends(get_current_active_user) # Снова безопасность!
+):
+    if not user_data:
+        raise HTTPException(status_code=401)
+
+    user = user_data["obj"]
+    plan_info = PLANS.get(plan_id)
+    
+    if not plan_info:
+        raise HTTPException(status_code=404, detail="План не найден")
+
+    plan_title = plan_info.get("title", "Персональный план")
+    
+    ai_user_data = {
+        "gender": gender, "weight": weight, "height": height,
+        "age": age, "experience": experience,
+        "equipment": equipment, "injuries": injuries
+    }
+
+    generated_text = await generate_training_plan(ai_user_data, plan_title)
+
+    # Сохраняем (создаем новый словарь, чтобы SQLAlchemy увидел изменения)
+    new_generated_plans = dict(user.generated_plans or {})
+    new_generated_plans[plan_id] = generated_text
+    user.generated_plans = new_generated_plans
+    
+    db.add(user)
+    db.commit()
+
+    return RedirectResponse(url=f"/course/{plan_id}", status_code=303)
 
 @app.post("/create-checkout-session/{plan_id}")
 async def create_checkout_session(plan_id: str, user_data=Depends(get_current_active_user)):
     if not user_data:
         raise HTTPException(status_code=401, detail="Войдите в аккаунт")
     
-    plans = get_plans_data()
-    plan = plans.get(plan_id)
+    plan = PLANS.get(plan_id)
     if not plan:
         raise HTTPException(status_code=404, detail="План не найден")
 
