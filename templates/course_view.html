@@ -264,10 +264,15 @@
     </div>
 
     <script src="https://js.stripe.com/v3/"></script>
+    <script id="plan-data-raw" type="application/json">
+    {{ plan_json | tojson | safe if plan_json else 'null' }}
+    </script>
     <script>
         // 1. Исправленный синтаксис получения JSON из Jinja2
         // Убраны лишние пробелы в {{ plan_json | safe }}, которые ломали JavaScript
-        const planData = {{ plan_json | tojson | safe if plan_json else 'null' }};
+        const planRawElement = document.getElementById('plan-data-raw');
+        const planData = JSON.parse(planRawElement.textContent);
+        console.log("Данные курса:", planData);
 
         // 2. Логика покупки
         const stripeBtn = document.getElementById('stripe-button');
