@@ -308,16 +308,16 @@
             });
         }
 
-        // 3. Функция отображения тренировок
+        // 3. Функция отображения (использует наш planData)
         function showDay(index) {
             const container = document.getElementById('exerciseList');
             if (!container) return;
 
-            // Если план пришел в виде текста (Markdown от ИИ)
+            // Если план — строка (Markdown от ИИ)
             if (typeof planData === 'string') {
                 container.innerHTML = `
-                    <div class="exercise-card" style="line-height: 1.6; font-size: 1.05rem;">
-                        ${marked.parse(planData)}
+                    <div class="exercise-card" style="line-height: 1.6; font-size: 1.05rem; white-space: pre-wrap;">
+                        ${typeof marked !== 'undefined' ? marked.parse(planData) : planData}
                     </div>
                 `;
                 const selector = document.getElementById('daySelector');
@@ -325,59 +325,35 @@
                 return;
             }
 
-            // Если данных нет
+            // Стандартная логика для готовых планов (массивов)
             if (!planData || !planData.days || !planData.days[index]) {
                 container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--muted);"><h3>Скоро здесь будет тренировка</h3></div>`;
                 return;
             }
 
-            // Переключение активной кнопки дня
             document.querySelectorAll('.day-btn').forEach((btn, i) => {
                 btn.classList.toggle('active', i === index);
             });
 
             const day = planData.days[index];
-            let htmlContent = `
-                <div class="day-header">
-                    <h2>${day.title}</h2>
-                    <p>${day.description || ''}</p>
-                </div>
-            `;
+            let htmlContent = `<div class="day-header"><h2>${day.title}</h2><p>${day.description || ''}</p></div>`;
 
             if (day.exercises && day.exercises.length > 0) {
                 htmlContent += day.exercises.map(ex => `
                     <div class="exercise-card">
                         <h3>${ex.name}</h3>
-                        <div class="meta">
-                            <span> ${ex.sets} подходов</span>
-                            <span> ${ex.reps} повторений</span>
-                        </div>
-                        ${ex.image_url ? `
-                            <div class="exercise-image-container">
-                                <img src="${ex.image_url}" alt="${ex.name}" class="exercise-image" loading="lazy">
-                            </div>
-                        ` : ''}
+                        <div class="meta"><span>${ex.sets} подходов</span><span>${ex.reps} повторений</span></div>
+                        ${ex.image_url ? `<div class="exercise-image-container"><img src="${ex.image_url}" class="exercise-image"></div>` : ''}
                     </div>
                 `).join('');
-            } else {
-                htmlContent += `<p style="text-align:center; color: var(--muted); padding: 20px;">В этом дне пока нет упражнений.</p>`;
             }
-
             container.innerHTML = htmlContent;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 4. Инициализация при загрузке страницы
+        // 4. Инициализация
         document.addEventListener('DOMContentLoaded', () => {
             if (document.getElementById('exerciseList')) {
-                // Если это текст от ИИ - показываем сразу
-                if (typeof planData === 'string') {
-                    showDay(0);
-                }
-                // Если это обычный план с днями - показываем первый день
-                else if (planData && planData.days && planData.days.length > 0) {
-                    showDay(0);
-                }
+                showDay(0);
             }
         });
     </script>
