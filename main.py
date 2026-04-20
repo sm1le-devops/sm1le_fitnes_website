@@ -62,6 +62,7 @@ def create_pdf_buffer(plan_text):
     
     # ПУТЬ К ШРИФТУ
     # Убедись, что путь совпадает с твоей структурой папок
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     font_path = os.path.join("static", "fonts", "DejaVuSans.ttf")
     
     if os.path.exists(font_path):
@@ -76,7 +77,7 @@ def create_pdf_buffer(plan_text):
 
     # Чтобы корректно отображать Markdown-текст от ИИ в PDF:
     # Очищаем текст от лишних символов и используем multi_cell для переноса строк
-    clean_text = plan_text.replace('\r', '') 
+    clean_text = str(plan_text).encode('utf-8', 'ignore').decode('utf-8')
     
     for line in clean_text.split('\n'):
         # multi_cell(ширина, высота_строки, текст)
@@ -84,7 +85,7 @@ def create_pdf_buffer(plan_text):
         pdf.multi_cell(0, 10, txt=line)
     
     # Возвращаем байты документа
-    return pdf.output()
+    return pdf.output(dest='S')
     
 
 
@@ -266,10 +267,10 @@ async def view_course(request: Request, plan_id: str, db: Session = Depends(get_
 
     return templates.TemplateResponse("course_view.html", {
         "request": request,
-        "plan": course_catalog_data,  # Маркетинговые данные из JSON (цена, заголовок)
+        "plan": course_catalog_data,  
         "plan_id": plan_id,
         "is_purchased": is_purchased,
-        "plan_json": json.dumps(generated_plan) if generated_plan else "null", # Текст от ИИ
+        "plan_json": generated_plan if generated_plan else None,
         "stripe_publishable_key": STRIPE_PUBLISHABLE_KEY
     })
     
