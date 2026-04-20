@@ -118,11 +118,45 @@
                 transform: rotate(360deg);
             }
         }
+
+        .back-btn-circle {
+            position: fixed;
+            /* Чтобы она не уплывала при скролле анкеты */
+            top: 20px;
+            left: 16px;
+            z-index: 100;
+            background: rgba(30, 41, 59, 0.6);
+            /* Полупрозрачный фон */
+            backdrop-filter: blur(8px);
+            /* Эффект размытия сзади */
+            -webkit-backdrop-filter: blur(8px);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: 0.2s;
+        }
+
+        .back-btn-circle:active {
+            transform: scale(0.9);
+            background: rgba(30, 41, 59, 0.9);
+        }
     </style>
 </head>
 
 <body>
+    <a href="javascript:history.back()" class="back-btn-circle">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M15 18l-6-6 6-6" />
+        </svg>
+    </a>
     <div class="app-wrapper">
+
         <div class="greeting">
             <h1>Почти готово!</h1>
             <p>Заполни анкету, и наш ИИ составит твой персональный план тренировок.</p>
@@ -195,6 +229,7 @@
             loader.style.display = "inline-block";
         };
     </script>
+
 </body>
 
 </html>

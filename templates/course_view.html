@@ -7,6 +7,7 @@
     <title>{{ plan.title if plan else 'Курс' }} — sm1le.fitness</title>
     <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <style>
         :root {
             --bg: #0F172A;
@@ -264,29 +265,35 @@
     </div>
 
     <script src="https://js.stripe.com/v3/"></script>
-    <script id="plan-data-raw" type="application/json">
-    {{ plan_json | tojson | safe if plan_json else 'null' }}
-    </script>
-    <script>
-        // 1. Исправленный синтаксис получения JSON из Jinja2
-        // Убраны лишние пробелы в {{ plan_json | safe }}, которые ломали JavaScript
-        const planRawElement = document.getElementById('plan-data-raw');
-        const planData = JSON.parse(planRawElement.textContent);
-        console.log("Данные курса:", planData);
 
-        // 2. Логика покупки
+    <script id="plan-data-raw" type="application/json">
+        {{ plan_json | tojson | safe if plan_json else 'null' }}
+    </script>
+
+    <script>
+        // --- 1. БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ДАННЫХ (Вставляем сюда) ---
+        const rawContent = document.getElementById('plan-data-raw').textContent;
+        let planData = null;
+
+        try {
+            // Используем JSON.parse, чтобы "Привет!" не вызывало ошибок
+            planData = JSON.parse(rawContent);
+            console.log("Данные курса загружены:", planData);
+        } catch (e) {
+            console.error("Ошибка парсинга плана:", e);
+        }
+        // -------------------------------------------------------
+
+        // 2. Логика покупки (без изменений)
         const stripeBtn = document.getElementById('stripe-button');
         if (stripeBtn) {
-            // Используем ключ, переданный из FastAPI
             const stripe = Stripe('{{ stripe_publishable_key }}');
-
             stripeBtn.addEventListener('click', async () => {
                 stripeBtn.innerText = 'Загрузка...';
                 stripeBtn.disabled = true;
                 try {
                     const response = await fetch('/create-checkout-session/{{ plan_id }}', { method: 'POST' });
                     const session = await response.json();
-
                     if (session.id) {
                         await stripe.redirectToCheckout({ sessionId: session.id });
                     } else {
@@ -295,7 +302,6 @@
                 } catch (e) {
                     alert('Ошибка связи с сервером');
                 } finally {
-                    // Возвращаем кнопку в исходное состояние при любой ошибке
                     stripeBtn.innerText = 'КУПИТЬ КУРС';
                     stripeBtn.disabled = false;
                 }
