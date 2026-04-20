@@ -61,24 +61,30 @@ def create_pdf_buffer(plan_text):
     pdf.add_page()
     
     # ПУТЬ К ШРИФТУ
-    font_path = "static/fonts/DejaVuSans.ttf" 
+    # Убедись, что путь совпадает с твоей структурой папок
+    font_path = os.path.join("static", "fonts", "DejaVuSans.ttf")
+    
     if os.path.exists(font_path):
+        # 1. Регистрируем шрифт под именем 'DejaVu'
         pdf.add_font('DejaVu', '', font_path)
+        # 2. Устанавливаем этот шрифт как активный
         pdf.set_font('DejaVu', '', 12)
     else:
+        print(f"ОШИБКА: Шрифт не найден по пути {font_path}")
+        # Если шрифта нет, ставим стандартный, но русский в нем не заработает
         pdf.set_font("Arial", size=12)
 
-    for line in plan_text.split('\n'):
+    # Чтобы корректно отображать Markdown-текст от ИИ в PDF:
+    # Очищаем текст от лишних символов и используем multi_cell для переноса строк
+    clean_text = plan_text.replace('\r', '') 
+    
+    for line in clean_text.split('\n'):
+        # multi_cell(ширина, высота_строки, текст)
+        # 0 — на всю ширину страницы
         pdf.multi_cell(0, 10, txt=line)
     
-    # Для fpdf2 (современная библиотека):
-    # output() без аргументов возвращает байты
-    pdf_bytes = pdf.output()
-    
-    # Если вы используете старую fpdf (v1), используйте:
-    # return pdf.output(dest='S').encode('latin-1')
-    
-    return pdf_bytes
+    # Возвращаем байты документа
+    return pdf.output()
     
 
 
