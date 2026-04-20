@@ -4,6 +4,8 @@ import io
 import stripe
 import logging
 from typing import Optional
+from routers.auth import generate_csrf_token
+from routers.auth import validate_csrf_token
 from contextlib import asynccontextmanager
 from routers.ai_service import generate_training_plan
 from fastapi import Form
@@ -175,12 +177,15 @@ async def get_questionnaire(request: Request, plan_id: str, user_data=Depends(ge
     if not user_data:
         return RedirectResponse(url="/auth/login")
     
-    if plan_id not in PLANS: # Используем переменную
+    if plan_id not in PLANS:
         raise HTTPException(status_code=404, detail="План не найден")
         
+    # Генерируем токен и передаем его в шаблон
+    token = generate_csrf_token()
     return templates.TemplateResponse("questionnaire.html", {
         "request": request, 
-        "plan_id": plan_id
+        "plan_id": plan_id,
+        "csrf_token": token  # Передаем токен
     })
     
 @app.get("/plans/{plan_id}", response_class=HTMLResponse)
@@ -265,6 +270,7 @@ async def view_course(request: Request, plan_id: str, db: Session = Depends(get_
 
 @app.post("/generate-plan/{plan_id}")
 async def process_questionnaire(
+    request: Request,
     plan_id: str,
     gender: str = Form(...),
     weight: float = Form(...),
@@ -276,6 +282,12 @@ async def process_questionnaire(
     db: Session = Depends(get_db),
     user_data=Depends(get_current_active_user) # Снова безопасность!
 ):
+    
+    form_data = await request.form()
+    csrf_from_form = form_data.get("csrf_token")
+    if not validate_csrf_token(csrf_from_form):
+        raise HTTPException(status_code=403, detail="CSRF токен невалиден или просрочен")
+
     if not user_data:
         raise HTTPException(status_code=401)
 
