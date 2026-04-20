@@ -305,7 +305,17 @@ async def process_questionnaire(
         "equipment": equipment, "injuries": injuries
     }
 
-    generated_text = await generate_training_plan(ai_user_data, plan_title)
+    generated_text = f"""
+            ## Твой персональный план: {plan_title}
+            Привет! Я проанализировал твои данные: вес {weight} кг, возраст {age} лет.
+
+            **Твои тренировки на неделю:**
+            1. Понедельник: Силовая тренировка (грудь/спина).
+            2. Среда: Кардио и пресс.
+            3. Пятница: Ноги и плечи.
+
+            *Это демонстрационный режим. Подключите API для работы реального ИИ.*
+            """
 
     # Сохраняем (создаем новый словарь, чтобы SQLAlchemy увидел изменения)
     new_generated_plans = dict(user.generated_plans or {})
