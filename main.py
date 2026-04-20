@@ -312,27 +312,35 @@ async def process_questionnaire(
         "equipment": equipment, "injuries": injuries
     }
 
-    generated_text = f"""
-            ## Твой персональный план: {plan_title}
-            Привет! Я проанализировал твои данные: вес {weight} кг, возраст {age} лет.
+    generated_text = f"""## Твой персональный план: {plan_title}
+Привет! Я проанализировал твои данные: вес {weight} кг, возраст {age} лет.
 
-            **Твои тренировки на неделю:**
-            1. Понедельник: Силовая тренировка (грудь/спина).
-            2. Среда: Кардио и пресс.
-            3. Пятница: Ноги и плечи.
+**Твои тренировки на неделю:**
+1. Понедельник: Силовая тренировка (грудь/спина).
+2. Среда: Кардио и пресс.
+3. Пятница: Ноги и плечи.
 
-            *Это демонстрационный режим. Подключите API для работы реального ИИ.*
-            """
+*Это демонстрационный режим. Подключите API для работы реального ИИ.*""".strip()
 
     # Сохраняем (создаем новый словарь, чтобы SQLAlchemy увидел изменения)
     new_generated_plans = dict(user.generated_plans or {})
     new_generated_plans[plan_id] = generated_text
     user.generated_plans = new_generated_plans
+    user.generated_plan = generated_text
     
     db.add(user)
     db.commit()
 
-    return RedirectResponse(url=f"/course/{plan_id}", status_code=303)
+    return HTMLResponse(content=f"""
+        <html>
+            <head><meta charset="utf-8"></head>
+            <body>
+                <script>
+                    window.location.href = "/course/{plan_id}";
+                </script>
+            </body>
+        </html>
+    """)
 
 @app.post("/create-checkout-session/{plan_id}")
 async def create_checkout_session(plan_id: str, user_data=Depends(get_current_active_user)):
