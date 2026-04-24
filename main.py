@@ -312,11 +312,10 @@ async def process_questionnaire(
         "equipment": equipment, "injuries": injuries
     }
 
-    try:
-        generated_text = await generate_training_plan(ai_user_data, plan_title)
-    except Exception as e:
-        logging.error(f"AI Generation Failed: {e}")
-        generated_text = "Извините, произошла ошибка при создании плана."
+    generated_text = await generate_training_plan(ai_user_data, plan_title)
+    if generated_text is None:
+    # Если ИИ упал, не записываем "Извините..." в базу, а возвращаем ошибку пользователю
+        raise HTTPException(status_code=500, detail="Ошибка ИИ. Попробуйте позже.")
 
     current_plans = dict(user.generated_plans or {})
     

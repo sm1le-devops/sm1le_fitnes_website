@@ -1,17 +1,17 @@
 import os
 import google.generativeai as genai
+import asyncio # Добавляем для запуска в отдельном потоке
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Настройка API ключа
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    print("ОШИБКА: Переменная GEMINI_API_KEY не найдена в .env")
+
+genai.configure(api_key=api_key)
 
 async def generate_training_plan(user_data: dict, plan_title: str):
-    """
-    Генерирует план через Google Gemini 1.5 Flash
-    """
-    # Инициализация модели
     model = genai.GenerativeModel('gemini-1.5-flash')
     
     prompt = f"""
@@ -35,9 +35,14 @@ async def generate_training_plan(user_data: dict, plan_title: str):
     """
 
     try:
-        # Генерация контента
-        response = model.generate_content(prompt)
+        # Оборачиваем синхронный вызов в to_thread, чтобы не блокировать FastAPI
+        response = await asyncio.to_thread(model.generate_content, prompt)
+        
+        if not response.text:
+            raise ValueError("Пустой ответ от модели")
+            
         return response.text
     except Exception as e:
-        print(f"Gemini Error: {e}")
-        return "Ошибка при генерации плана ИИ. Пожалуйста, попробуйте позже."
+        print(f"Критическая ошибка Gemini: {e}")
+        # Возвращаем None или вызываем ошибку, чтобы main.py понял, что что-то не так
+        return None
