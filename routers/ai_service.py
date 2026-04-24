@@ -9,58 +9,54 @@ load_dotenv()
 async def generate_training_plan(user_data: dict, plan_title: str):
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        logging.error("GEMINI_API_KEY не найден в переменных окружения")
+        logging.error("КРИТИЧЕСКАЯ ОШИБКА: GEMINI_API_KEY не установлен!")
         return None
 
-    # Прямая ссылка на стабильную версию v1. 
-    # Здесь 404 возникнуть не может, так как путь прописан вручную.
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+    model_name = "gemini-1.5-flash" 
+    url = f"https://generativelanguage.googleapis.com/v1/models/{model_name}:generateContent?key={api_key}"
     
-    prompt = f"""
-    Ты — профессиональный фитнес-тренер. Составь персональный план тренировок.
-    Курс: {plan_title}
-    Данные клиента:
-    - Пол: {user_data.get('gender')}
-    - Вес: {user_data.get('weight')} кг
-    - Рост: {user_data.get('height')} см
-    - Возраст: {user_data.get('age')} лет
-    - Опыт: {user_data.get('experience', 'не указан')}
-    - Оборудование: {user_data.get('equipment', 'не указано')}
-    
-    Требования к ответу:
-    1. Используй Markdown (заголовки ##, жирный текст).
-    2. План на неделю + советы по питанию.
-    3. Язык: Русский.
-    """
+    # Расширенный промпт для лучшего качества
+    prompt = (
+        f"Ты — профессиональный фитнес-тренер. Составь подробный план тренировок для курса '{plan_title}'.\n"
+        f"Данные клиента: {user_data}.\n"
+        f"Ответ должен быть на русском языке, использовать Markdown разметку, "
+        f"включать упражнения, количество подходов и повторений."
+    )
 
     payload = {
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }],
+        "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": 0.7,
-            "maxOutputTokens": 2048
+            "maxOutputTokens": 2048,
         }
     }
 
     try:
-        logging.info("DEBUG: Отправка прямого запроса к Gemini v1 через HTTP...")
         async with httpx.AsyncClient(timeout=60.0) as client:
+            logging.info(f"DEBUG: Попытка запроса к {model_name}...")
             response = await client.post(url, json=payload)
             
+            # Если 404 (модель не найдена), пробуем старую добрую gemini-pro
+            if response.status_code == 404:
+                logging.warning(f"Модель {model_name} не найдена. Откат на gemini-pro...")
+                url_old = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={api_key}"
+                response = await client.post(url_old, json=payload)
+
             if response.status_code != 200:
-                logging.error(f"Ошибка API Google: {response.status_code} - {response.text}")
+                logging.error(f"Ошибка API Google (Status {response.status_code}): {response.text}")
                 return None
                 
             data = response.json()
             
-            # Проверка структуры ответа
-            if 'candidates' in data and len(data['candidates']) > 0:
-                return data['candidates'][0]['content']['parts'][0]['text']
-            else:
-                logging.error(f"Неожиданный формат ответа: {data}")
+            # Безопасное извлечение текста
+            try:
+                text = data['candidates'][0]['content']['parts'][0]['text']
+                logging.info("✅ План успешно сгенерирован нейросетью.")
+                return text
+            except (KeyError, IndexError):
+                logging.error(f"Ошибка парсинга ответа Google: {data}")
                 return None
 
     except Exception as e:
-        logging.error(f"Критическая ошибка при генерации: {e}")
+        logging.error(f"Непредвиденная ошибка в ai_service: {e}")
         return None

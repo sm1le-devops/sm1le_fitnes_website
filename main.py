@@ -4,8 +4,8 @@ import io
 import stripe
 import logging
 from typing import Optional
-from routers.auth import generate_csrf_token
-from routers.auth import validate_csrf_token
+from routers.auth import generate_csrf_token,validate_csrf_token
+from sqlalchemy.orm.attributes import flag_modified
 from contextlib import asynccontextmanager
 from routers.ai_service import generate_training_plan
 from fastapi import Form
@@ -57,36 +57,41 @@ def load_plans():
 PLANS = load_plans()
 
 def create_pdf_buffer(plan_text):
+    # Используем fpdf2
     pdf = FPDF()
     pdf.add_page()
     
-    # ПУТЬ К ШРИФТУ
-    # Убедись, что путь совпадает с твоей структурой папок
     base_dir = os.path.dirname(os.path.abspath(__file__))
     font_path = os.path.join(base_dir, "static", "fonts", "DejaVuSans.ttf")
     
     if os.path.exists(font_path):
         pdf.add_font('DejaVu', '', font_path, unicode=True)
-        # 2. Устанавливаем этот шрифт как активный
         pdf.set_font('DejaVu', '', 12)
     else:
-        print(f"ОШИБКА: Шрифт не найден по пути {font_path}")
-        # Если шрифта нет, ставим стандартный, но русский в нем не заработает
+        logging.error(f"Шрифт не найден: {font_path}")
         pdf.set_font("Arial", size=12)
 
-    # Чтобы корректно отображать Markdown-текст от ИИ в PDF:
-    # Очищаем текст от лишних символов и используем multi_cell для переноса строк
+    # Очистка текста от Markdown символов, чтобы PDF выглядел аккуратно
     clean_text = str(plan_text).replace("**", "").replace("__", "").replace("#", "")
     
+    # Автоматический перенос строк (multi_cell)
     for line in clean_text.split('\n'):
-        # multi_cell(ширина, высота_строки, текст)
-        # 0 — на всю ширину страницы
         pdf.multi_cell(0, 10, txt=line)
     
-    # Возвращаем байты документа
-    output = pdf.output(dest='S')
-    return output if isinstance(output, bytes) else output.encode('latin-1')
-    
+    try:
+        # dest='S' принудительно возвращает документ как байтовую строку (String/Bytes)
+        # Это самый надежный способ для FastAPI
+        pdf_output = pdf.output(dest='S')
+        
+        # Если пришла строка (зависит от версии fpdf), кодируем в latin-1 или utf-8
+        if isinstance(pdf_output, str):
+            return pdf_output.encode('latin-1')
+        return pdf_output
+        
+    except Exception as e:
+        logging.error(f"Ошибка при сохранении PDF: {e}")
+        # Возвращаем заглушку, чтобы сервер не упал
+        return b"Error: Could not generate PDF"
 
 
 async def get_current_active_user(
@@ -320,14 +325,12 @@ async def process_questionnaire(
         )
 
     current_plans = dict(user.generated_plans or {})
-    
-    # 2. Добавляем новый сгенерированный текст по ключу plan_id
     current_plans[plan_id] = generated_text
     
-    # 3. Перезаписываем поле (важно для фиксации изменений в SQLAlchemy)
+    # ПРИНУДИТЕЛЬНО помечаем поле для SQLAlchemy
     user.generated_plans = current_plans
+    flag_modified(user, "generated_plans") 
     
-    # 4. Сохраняем в базу
     db.add(user)
     db.commit()
 
