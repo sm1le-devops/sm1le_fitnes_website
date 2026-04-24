@@ -12,7 +12,7 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 async def generate_training_plan(user_data: dict, plan_title: str):
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel(model_name='models/gemini-1.5-flash')
     
     prompt = f"""
     Ты — профессиональный фитнес-тренер. Составь персональный план.
@@ -35,14 +35,21 @@ async def generate_training_plan(user_data: dict, plan_title: str):
     """
 
     try:
-        # Оборачиваем синхронный вызов в to_thread, чтобы не блокировать FastAPI
+        # 1. Получаем ответ от модели
         response = await asyncio.to_thread(model.generate_content, prompt)
         
-        if not response.text:
-            raise ValueError("Пустой ответ от модели")
+        # 2. ПРОВЕРКА (Вставляем сюда)
+        # Проверяем, есть ли в ответе "кандидаты" (сгенерированный контент)
+        if not response.candidates or not response.candidates[0].content.parts:
+            print("--- ERROR: Ответ заблокирован фильтрами безопасности или пуст ---")
+            # Если нужно увидеть причину блокировки в логах Render:
+            if response.prompt_feedback:
+                print(f"Причина блокировки: {response.prompt_feedback}")
+            return None
             
+        # 3. Если проверка прошла, возвращаем текст
         return response.text
+
     except Exception as e:
         print(f"Критическая ошибка Gemini: {e}")
-        # Возвращаем None или вызываем ошибку, чтобы main.py понял, что что-то не так
         return None
