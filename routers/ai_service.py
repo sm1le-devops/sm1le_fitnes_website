@@ -1,23 +1,26 @@
 import os
 import google.generativeai as genai
-from google.generativeai.types import RequestOptions
 import asyncio
 from dotenv import load_dotenv
 
+# 1. Сначала загружаем .env
 load_dotenv()
 
-# Полностью очищаем переменные окружения, которые могут путать библиотеку
-if "GOOGLE_API_VERSION" in os.environ:
-    del os.environ["GOOGLE_API_VERSION"]
+# 2. Устанавливаем версию API через системную переменную. 
+# Это заставит ЛЮБУЮ версию библиотеки использовать стабильную v1.
+os.environ["GOOGLE_API_VERSION"] = "v1"
 
 api_key = os.getenv("GEMINI_API_KEY")
 
-# Настраиваем библиотеку
-genai.configure(api_key=api_key)
+# 3. Настраиваем библиотеку простейшим способом
+if api_key:
+    genai.configure(api_key=api_key)
 
 async def generate_training_plan(user_data: dict, plan_title: str):
-    # Используем имена БЕЗ префикса models/, так как новая версия библиотеки 
-    # подставляет их сама, но добавим RequestOptions для фиксации версии API
+    # Используем стандартные названия моделей
+    # Если на сервере старая библиотека, она может не знать 'gemini-1.5-flash',
+    # поэтому в fallback добавим старую добрую 'gemini-pro'
+    models_to_try = ['gemini-1.5-flash', 'gemini-pro']
     
     prompt = f"""
     Ты — профессиональный фитнес-тренер. Составь персональный план тренировок.
@@ -33,25 +36,20 @@ async def generate_training_plan(user_data: dict, plan_title: str):
     2. План на неделю + советы по питанию. Язык: Русский.
     """
 
-    async def safe_generate(model_id):
-        # RequestOptions(api_version='v1') — это КЛЮЧЕВОЙ момент, 
-        # чтобы уйти от глючной v1beta, которая выдает 404
-        model = genai.GenerativeModel(model_id)
-        response = await asyncio.to_thread(
-            model.generate_content, 
-            prompt,
-            request_options=RequestOptions(api_version='v1')
-        )
-        return response.text
-
-    try:
-        print(f"DEBUG: Попытка генерации через gemini-1.5-flash (v1)...")
-        return await safe_generate('gemini-1.5-flash')
-    except Exception as e:
-        print(f"Ошибка Flash: {e}")
+    for model_name in models_to_try:
         try:
-            print(f"DEBUG: Пробую gemini-1.5-pro (v1)...")
-            return await safe_generate('gemini-1.5-pro')
-        except Exception as e2:
-            print(f"Критическая ошибка: {e2}")
-            return None
+            print(f"DEBUG: Попытка генерации через {model_name}...")
+            # Создаем модель без лишних аргументов
+            model = genai.GenerativeModel(model_name)
+            
+            # Вызываем генерацию
+            response = await asyncio.to_thread(model.generate_content, prompt)
+            
+            if response and response.text:
+                return response.text
+                
+        except Exception as e:
+            print(f"Ошибка с моделью {model_name}: {e}")
+            continue # Пробуем следующую модель из списка
+            
+    return None
