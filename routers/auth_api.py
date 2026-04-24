@@ -1,7 +1,6 @@
 import os
 import google.generativeai as genai
 import asyncio
-from google.generativeai import buffering # Для стабильности
 
 # Настройка API ключа с явным указанием версии v1
 # Это принудительно заставит библиотеку не использовать v1beta
