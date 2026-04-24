@@ -314,8 +314,10 @@ async def process_questionnaire(
 
     generated_text = await generate_training_plan(ai_user_data, plan_title)
     if generated_text is None:
-    # Если ИИ упал, не записываем "Извините..." в базу, а возвращаем ошибку пользователю
-        raise HTTPException(status_code=500, detail="Ошибка ИИ. Попробуйте позже.")
+        raise HTTPException(
+            status_code=503, 
+            detail="Нейросеть сейчас перегружена. Пожалуйста, подождите 30 секунд и нажмите кнопку снова."
+        )
 
     current_plans = dict(user.generated_plans or {})
     

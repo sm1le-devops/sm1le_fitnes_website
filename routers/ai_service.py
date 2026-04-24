@@ -1,9 +1,12 @@
 import os
 import google.generativeai as genai
-import asyncio # Добавляем для запуска в отдельном потоке
+import asyncio
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: принудительно используем стабильную версию API v1
+os.environ["GOOGLE_API_VERSION"] = "v1"
 
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
@@ -12,7 +15,8 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 async def generate_training_plan(user_data: dict, plan_title: str):
-    model = genai.GenerativeModel(model_name='models/gemini-1.5-flash')
+    # Пытаемся использовать 1.5-flash (быстрая)
+    model_name = 'gemini-1.5-flash'
     
     prompt = f"""
     Ты — профессиональный фитнес-тренер. Составь персональный план.
@@ -34,22 +38,32 @@ async def generate_training_plan(user_data: dict, plan_title: str):
     4. Язык: Русский.
     """
 
-    try:
-        # 1. Получаем ответ от модели
+    async def safe_generate(current_model_name):
+        model = genai.GenerativeModel(model_name=current_model_name)
+        # Запускаем блокирующий сетевой запрос в отдельном потоке
         response = await asyncio.to_thread(model.generate_content, prompt)
         
-        # 2. ПРОВЕРКА (Вставляем сюда)
-        # Проверяем, есть ли в ответе "кандидаты" (сгенерированный контент)
         if not response.candidates or not response.candidates[0].content.parts:
-            print("--- ERROR: Ответ заблокирован фильтрами безопасности или пуст ---")
-            # Если нужно увидеть причину блокировки в логах Render:
-            if response.prompt_feedback:
-                print(f"Причина блокировки: {response.prompt_feedback}")
             return None
-            
-        # 3. Если проверка прошла, возвращаем текст
         return response.text
 
+    try:
+        print(f"DEBUG: Попытка генерации через {model_name}...")
+        result = await safe_generate(model_name)
+        if result:
+            return result
+        else:
+            raise Exception("Пустой ответ от модели")
+
     except Exception as e:
-        print(f"Критическая ошибка Gemini: {e}")
+        print(f"Ошибка Gemini ({model_name}): {e}")
+        
+        # Если 404 или любая другая ошибка — пробуем запасной вариант
+        if "404" in str(e) or "500" in str(e) or "None" in str(e):
+            print("DEBUG: Ошибка 1.5-flash. Пробую запасную модель gemini-pro...")
+            try:
+                return await safe_generate('gemini-pro')
+            except Exception as e2:
+                print(f"Ошибка запасной модели gemini-pro: {e2}")
+                return None
         return None

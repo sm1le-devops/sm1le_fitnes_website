@@ -1,29 +1,41 @@
-from fastapi import APIRouter, Request, Depends, HTTPException
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-from database import get_db
-import models
-from routers.auth import validate_csrf_token
+import os
+import google.generativeai as genai
+import asyncio
+from google.generativeai import buffering # Для стабильности
 
-router = APIRouter()
+# Настройка API ключа с явным указанием версии v1
+# Это принудительно заставит библиотеку не использовать v1beta
+os.environ["GOOGLE_API_VERSION"] = "v1" 
 
-@router.get("/api/check-auth")
-def check_auth(request: Request, db: Session = Depends(get_db)):
-    cookie_username = request.cookies.get("username")
-    cookie_token = request.cookies.get("csrf_token")
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-    if not cookie_username:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+async def generate_training_plan(user_data: dict, plan_title: str):
+    # Попробуем использовать модель без префикса models/, 
+    # так как мы принудительно переключили версию API выше
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    prompt = f"""
+    Ты — профессиональный фитнес-тренер. Составь план... (ваш текст)
+    """
 
-    db_user = db.query(models.User).filter(models.User.username == cookie_username).first()
-    if not db_user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    try:
+        # ЛОГ ДЛЯ ПРОВЕРКИ
+        print(f"DEBUG: Попытка запроса к Gemini через API v1")
+        
+        response = await asyncio.to_thread(model.generate_content, prompt)
+        
+        # Если снова 404, попробуйте заменить 'gemini-1.5-flash' на 'gemini-pro'
+        return response.text
 
-    # Возвращаем имя и аватарку, чтобы главная могла их отобразить
-    return JSONResponse(content={
-        "status": "ok", 
-        "user": {
-            "username": db_user.username,
-            "avatar": db_user.avatar  # Добавили это поле
-        }
-    })
+    except Exception as e:
+        print(f"Критическая ошибка Gemini: {e}")
+        # Если ошибка содержит 404, попробуем запасную модель
+        if "404" in str(e):
+             print("Пытаемся использовать запасную модель gemini-pro...")
+             try:
+                 fallback_model = genai.GenerativeModel('gemini-pro')
+                 resp = await asyncio.to_thread(fallback_model.generate_content, prompt)
+                 return resp.text
+             except:
+                 return None
+        return None
