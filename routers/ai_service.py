@@ -1,6 +1,6 @@
 import os
-import httpx
 import logging
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,37 +11,42 @@ async def generate_training_plan(user_data: dict, plan_title: str):
         logging.error("КРИТИЧЕСКАЯ ОШИБКА: GEMINI_API_KEY не установлен!")
         return None
 
-    # v1beta — лучший выбор для flash моделей сейчас
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-    
-    prompt = (
-        f"Ты — профессиональный фитнес-тренер. Составь подробный план тренировок для курса '{plan_title}'.\n"
-        f"Данные клиента: {user_data}.\n"
-        f"Ответ должен быть на русском языке, использовать Markdown разметку."
-    )
-
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
-
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            logging.info("DEBUG: Отправка запроса в Gemini 1.5 Flash...")
-            response = await client.post(url, json=payload)
-            
-            # Если 404, пробуем альтернативный эндпоинт без beta
-            if response.status_code == 404:
-                logging.warning("v1beta не ответил, пробую v1...")
-                url_alt = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                response = await client.post(url_alt, json=payload)
+        # Инициализация SDK
+        genai.configure(api_key=api_key)
+        
+        # Выбираем модель. 1.5-flash сейчас самая стабильная для этого региона
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = (
+            f"Ты — профессиональный фитнес-тренер. Составь подробный план тренировок для курса '{plan_title}'.\n"
+            f"Данные клиента: {user_data}.\n"
+            f"Ответ должен быть на русском языке, использовать Markdown разметку."
+        )
 
-            if response.status_code != 200:
-                logging.error(f"Ошибка API Google: {response.status_code} - {response.text}")
-                return None
-                
-            data = response.json()
-            return data['candidates'][0]['content']['parts'][0]['text']
+        logging.info("DEBUG: Запрос к Gemini через официальный SDK...")
+        
+        # Генерация контента (в SDK это синхронный вызов, 
+        # для асинхронности в высоконагруженных системах используют другие методы, 
+        # но для твоего проекта этого достаточно)
+        response = await model.generate_content_async(prompt)
+        
+        if response and response.text:
+            logging.info("✅ План успешно сгенерирован!")
+            return response.text
+        else:
+            logging.error("Получен пустой ответ от модели")
+            return None
 
     except Exception as e:
-        logging.error(f"Ошибка в ai_service: {e}")
-        return None
+        logging.error(f"Ошибка Google AI SDK: {e}")
+        # Запасной вариант, если flash недоступна
+        try:
+            logging.warning("Пробую gemini-pro...")
+            model_alt = genai.GenerativeModel('gemini-pro')
+            # Также делаем асинхронно
+            response = await model_alt.generate_content_async(prompt) 
+            return response.text
+        except Exception as e2:
+            logging.error(f"Полный отказ всех моделей: {e2}")
+            return None
