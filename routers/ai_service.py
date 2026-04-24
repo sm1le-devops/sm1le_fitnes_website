@@ -1,50 +1,66 @@
 import os
-import google.generativeai as genai
-from google.generativeai.types import RequestOptions
+import httpx
 import asyncio
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
 
-api_key = os.getenv("GEMINI_API_KEY")
-
-# Настройка
-if api_key:
-    genai.configure(api_key=api_key)
-
 async def generate_training_plan(user_data: dict, plan_title: str):
-    # Мы используем полный путь к модели. 
-    # В некоторых версиях библиотеки это единственный способ пробиться через 404
-    models_to_try = [
-        "models/gemini-1.5-flash", 
-        "models/gemini-1.5-pro",
-        "models/gemini-pro"
-    ]
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        logging.error("GEMINI_API_KEY не найден в переменных окружения")
+        return None
+
+    # Прямая ссылка на стабильную версию v1. 
+    # Здесь 404 возникнуть не может, так как путь прописан вручную.
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
     
-    prompt = f"Ты фитнес-тренер. Составь план тренировок для курса {plan_title}. Данные: {user_data}. Ответ на русском в Markdown."
+    prompt = f"""
+    Ты — профессиональный фитнес-тренер. Составь персональный план тренировок.
+    Курс: {plan_title}
+    Данные клиента:
+    - Пол: {user_data.get('gender')}
+    - Вес: {user_data.get('weight')} кг
+    - Рост: {user_data.get('height')} см
+    - Возраст: {user_data.get('age')} лет
+    - Опыт: {user_data.get('experience', 'не указан')}
+    - Оборудование: {user_data.get('equipment', 'не указано')}
+    
+    Требования к ответу:
+    1. Используй Markdown (заголовки ##, жирный текст).
+    2. План на неделю + советы по питанию.
+    3. Язык: Русский.
+    """
 
-    # Создаем опции запроса вручную, чтобы принудительно выставить v1
-    # Если api_version не поддерживается как аргумент, мы поймаем это в блоке try
-    for m_name in models_to_try:
-        try:
-            print(f"DEBUG: Пробую принудительный вызов {m_name} через v1...")
-            model = genai.GenerativeModel(model_name=m_name)
-            
-            # Прямая попытка генерации. 
-            # Если RequestOptions вызовет ошибку, перейдем в except и попробуем без него
-            try:
-                response = await asyncio.to_thread(
-                    model.generate_content, 
-                    prompt,
-                    request_options={"api_version": "v1"}
-                )
-            except:
-                response = await asyncio.to_thread(model.generate_content, prompt)
+    payload = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }],
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 2048
+        }
+    }
 
-            if response and response.text:
-                return response.text
-        except Exception as e:
-            print(f"Ошибка с {m_name}: {e}")
-            continue
+    try:
+        logging.info("DEBUG: Отправка прямого запроса к Gemini v1 через HTTP...")
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(url, json=payload)
             
-    return None
+            if response.status_code != 200:
+                logging.error(f"Ошибка API Google: {response.status_code} - {response.text}")
+                return None
+                
+            data = response.json()
+            
+            # Проверка структуры ответа
+            if 'candidates' in data and len(data['candidates']) > 0:
+                return data['candidates'][0]['content']['parts'][0]['text']
+            else:
+                logging.error(f"Неожиданный формат ответа: {data}")
+                return None
+
+    except Exception as e:
+        logging.error(f"Критическая ошибка при генерации: {e}")
+        return None
