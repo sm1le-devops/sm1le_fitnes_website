@@ -63,11 +63,10 @@ def create_pdf_buffer(plan_text):
     # ПУТЬ К ШРИФТУ
     # Убедись, что путь совпадает с твоей структурой папок
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    font_path = os.path.join("static", "fonts", "DejaVuSans.ttf")
+    font_path = os.path.join(base_dir, "static", "fonts", "DejaVuSans.ttf")
     
     if os.path.exists(font_path):
-        # 1. Регистрируем шрифт под именем 'DejaVu'
-        pdf.add_font('DejaVu', '', font_path)
+        pdf.add_font('DejaVu', '', font_path, unicode=True)
         # 2. Устанавливаем этот шрифт как активный
         pdf.set_font('DejaVu', '', 12)
     else:
@@ -77,7 +76,7 @@ def create_pdf_buffer(plan_text):
 
     # Чтобы корректно отображать Markdown-текст от ИИ в PDF:
     # Очищаем текст от лишних символов и используем multi_cell для переноса строк
-    clean_text = str(plan_text).encode('utf-8', 'ignore').decode('utf-8')
+    clean_text = str(plan_text).replace("**", "").replace("__", "").replace("#", "")
     
     for line in clean_text.split('\n'):
         # multi_cell(ширина, высота_строки, текст)
@@ -85,7 +84,8 @@ def create_pdf_buffer(plan_text):
         pdf.multi_cell(0, 10, txt=line)
     
     # Возвращаем байты документа
-    return pdf.output(dest='S')
+    output = pdf.output(dest='S')
+    return output if isinstance(output, bytes) else output.encode('latin-1')
     
 
 
@@ -312,22 +312,21 @@ async def process_questionnaire(
         "equipment": equipment, "injuries": injuries
     }
 
-    generated_text = f"""## Твой персональный план: {plan_title}
-Привет. Я проанализировал твои данные: вес {weight} кг, возраст {age} лет.
+    try:
+        generated_text = await generate_training_plan(ai_user_data, plan_title)
+    except Exception as e:
+        logging.error(f"AI Generation Failed: {e}")
+        generated_text = "Извините, произошла ошибка при создании плана."
 
-**Твои тренировки на неделю:**
-1. Понедельник: Силовая тренировка (грудь/спина).
-2. Среда: Кардио и пресс.
-3. Пятница: Ноги и плечи.
-
-*Демо режим.*""".strip()
-
-    # Сохраняем (создаем новый словарь, чтобы SQLAlchemy увидел изменения)
-    new_generated_plans = dict(user.generated_plans or {})
-    new_generated_plans[plan_id] = generated_text
-    user.generated_plans = new_generated_plans
-    user.generated_plan = generated_text
+    current_plans = dict(user.generated_plans or {})
     
+    # 2. Добавляем новый сгенерированный текст по ключу plan_id
+    current_plans[plan_id] = generated_text
+    
+    # 3. Перезаписываем поле (важно для фиксации изменений в SQLAlchemy)
+    user.generated_plans = current_plans
+    
+    # 4. Сохраняем в базу
     db.add(user)
     db.commit()
 

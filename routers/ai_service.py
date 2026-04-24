@@ -1,18 +1,21 @@
 import os
-from openai import OpenAI
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Инициализируем клиент. Ключ должен лежать в .env как OPENAI_API_KEY
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Настройка API ключа
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 async def generate_training_plan(user_data: dict, plan_title: str):
     """
-    Формирует запрос к ИИ на основе данных пользователя и возвращает текст плана.
+    Генерирует план через Google Gemini 1.5 Flash
     """
+    # Инициализация модели
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
     prompt = f"""
-    Ты — элитный фитнес-тренер. Составь персональный план тренировок.
+    Ты — профессиональный фитнес-тренер. Составь персональный план.
     Курс: {plan_title}
     
     Данные клиента:
@@ -22,25 +25,19 @@ async def generate_training_plan(user_data: dict, plan_title: str):
     - Возраст: {user_data.get('age')} лет
     - Опыт: {user_data.get('experience')}
     - Оборудование: {user_data.get('equipment')}
-    - Ограничения/Травмы: {user_data.get('injuries')}
+    - Травмы: {user_data.get('injuries')}
 
     Требования к ответу:
-    1. Формат Markdown (используй заголовки ##, списки и жирный текст).
-    2. План на 4 недели.
-    3. Советы по питанию под эти параметры.
-    4. Мотивирующее вступление.
+    1. Используй Markdown (заголовки ##, жирный текст).
+    2. План должен включать тренировки на неделю и краткие советы по питанию.
+    3. Тон общения: мотивирующий, профессиональный.
+    4. Язык: Русский.
     """
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o", # Или gpt-3.5-turbo для экономии
-            messages=[
-                {"role": "system", "content": "Ты эксперт по фитнесу и биомеханике. Отвечай на русском языке."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7 # Немного креативности, но без фанатизма
-        )
-        return response.choices[0].message.content
+        # Генерация контента
+        response = model.generate_content(prompt)
+        return response.text
     except Exception as e:
-        print(f"Ошибка AI: {e}")
-        return "Извини, произошла ошибка при генерации плана. Попробуй позже."
+        print(f"Gemini Error: {e}")
+        return "Ошибка при генерации плана ИИ. Пожалуйста, попробуйте позже."
