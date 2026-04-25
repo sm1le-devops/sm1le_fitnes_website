@@ -12,12 +12,11 @@ async def generate_training_plan(user_data: dict, plan_title: str):
         return None
 
     try:
-        # ПРИНУДИТЕЛЬНО задаем v1, чтобы избежать 404 на v1beta
-        genai.configure(api_key=api_key, transport='rest') 
+        # Настройка ключа
+        genai.configure(api_key=api_key) 
         
-        # Можно попробовать явно прописать версию, если SDK позволяет в твоей версии
-        # Но самый надежный способ — проверить саму строку модели
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # 1. Используем flash-latest — это самый надежный путь в v1
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
         
         prompt = (
             f"Ты — профессиональный фитнес-тренер. Составь подробный план тренировок для курса '{plan_title}'.\n"
@@ -25,24 +24,20 @@ async def generate_training_plan(user_data: dict, plan_title: str):
             f"Ответ должен быть на русском языке, использовать Markdown разметку."
         )
 
-        logging.info("DEBUG: Запрос к Gemini через официальный SDK (v1)...")
+        logging.info("DEBUG: Запрос к Gemini (модель: 1.5-flash-latest)...")
         
-        # Используем асинхронный вызов
         response = await model.generate_content_async(prompt)
         
         if response and response.text:
             logging.info("✅ План успешно сгенерирован!")
             return response.text
-        else:
-            logging.error("Получен пустой ответ от модели")
-            return None
 
     except Exception as e:
-        logging.error(f"Ошибка Google AI SDK: {e}")
-        # Если 1.5-flash не найдена, пробуем 1.0-pro (gemini-pro иногда так называется в v1)
+        logging.error(f"Ошибка Flash модели: {e}")
+        # 2. Если Flash упала (например, 404), пробуем стабильный Pro
         try:
-            logging.warning("Пробую gemini-1.0-pro...")
-            model_alt = genai.GenerativeModel('gemini-1.0-pro')
+            logging.warning("Пробую gemini-pro (fallback)...")
+            model_alt = genai.GenerativeModel('gemini-pro')
             response = await model_alt.generate_content_async(prompt)
             return response.text
         except Exception as e2:
