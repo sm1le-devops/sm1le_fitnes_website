@@ -12,6 +12,9 @@ import redis.asyncio as redis
 
 load_dotenv()
 
+# Настройка логирования (важно для Render)
+logging.basicConfig(level=logging.INFO)
+
 # --- Redis ---
 redis_client = redis.from_url(
     os.getenv("REDIS_URL"),
@@ -21,21 +24,20 @@ redis_client = redis.from_url(
 # --- Gemini client ---
 _client: genai.Client | None = None
 
-
 def get_client():
     global _client
-
     if _client is None:
         api_key = os.getenv("GEMINI_API_KEY")
-
         if not api_key:
             raise RuntimeError("GEMINI_API_KEY не установлен")
-
-        _client = genai.Client(api_key=api_key)
-        logging.info("✅ Gemini клиент инициализирован")
-
+        
+        # Используем стабильную версию API v1
+        _client = genai.Client(
+            api_key=api_key,
+            http_options={'api_version': 'v1'} 
+        )
+        logging.info("✅ Gemini клиент инициализирован (v1)")
     return _client
-
 
 # --- Ключ кеша ---
 def make_cache_key(user_data: dict, plan_title: str) -> str:
@@ -46,17 +48,14 @@ def make_cache_key(user_data: dict, plan_title: str) -> str:
     )
     return "plan:" + hashlib.sha256(raw.encode()).hexdigest()
 
-
 # --- Основная функция ---
 async def generate_training_plan(user_data: dict, plan_title: str):
     client = get_client()
 
-    # 🔒 нормальная сериализация (а не str(dict))
     user_data_str = json.dumps(user_data, ensure_ascii=False)[:1000]
-
     cache_key = make_cache_key(user_data, plan_title)
 
-    # ✅ 1. SAFE Redis read (Redis может упасть)
+    # 1. Читаем кеш
     cached = None
     try:
         cached = await redis_client.get(cache_key)
@@ -75,19 +74,20 @@ async def generate_training_plan(user_data: dict, plan_title: str):
     )
 
     max_retries = 3
-    delay = 5
+    delay = 10  # Увеличили начальную паузу для Free Tier
 
     for attempt in range(1, max_retries + 1):
         try:
-            logging.info(f"📡 Попытка {attempt}: запрос к Gemini...")
+            logging.info(f"📡 Попытка {attempt}: запрос к Gemini (1.5-flash-8b)...")
 
+            # Используем 1.5-flash-8b и увеличили таймаут до 30с
             response = await asyncio.wait_for(
                 run_in_threadpool(
                     client.models.generate_content,
-                    model="gemini-2.0-flash",
+                    model="gemini-1.5-flash-8b", 
                     contents=prompt
                 ),
-                timeout=15
+                timeout=30
             )
 
             text = getattr(response, "text", None)
@@ -95,32 +95,29 @@ async def generate_training_plan(user_data: dict, plan_title: str):
             if not text:
                 raise ValueError("Пустой ответ от Gemini")
 
-            # --- SAFE cache write ---
+            # Сохраняем в кеш
             try:
                 await redis_client.set(cache_key, text, ex=3600)
             except Exception as e:
                 logging.warning(f"⚠️ Не удалось сохранить в Redis: {e}")
 
-            logging.info("✅ План сгенерирован и сохранён в кеш")
+            logging.info("✅ План сгенерирован успешно")
             return text
 
         except asyncio.TimeoutError:
-            logging.warning(f"⏱ Таймаут (попытка {attempt})")
+            logging.warning(f"⏱ Таймаут на попытке {attempt}")
 
         except Exception as e:
             error_text = str(e)
-
-            # retry только для временных ошибок
-            if any(x in error_text for x in ["429", "500", "503"]):
-                logging.warning(f"🔁 Временная ошибка: {e}")
+            if any(x in error_text for x in ["429", "500", "503", "404"]):
+                logging.warning(f"🔁 Ошибка API ({error_text}). Повтор...")
             else:
                 logging.error(f"❌ Критическая ошибка: {e}")
-                return "❌ Ошибка генерации. Проверьте данные."
+                return "❌ Ошибка при генерации плана."
 
         if attempt < max_retries:
             await asyncio.sleep(delay)
-            delay *= 2
+            delay *= 2 # Экспоненциальное ожидание (10с, 20с...)
 
-    logging.error("💥 Все попытки провалились")
-
-    return "❌ Не удалось сгенерировать план. Попробуйте позже."
+    logging.error("💥 Все попытки генерации провалились")
+    return "❌ Не удалось получить ответ от нейросети. Пожалуйста, попробуйте позже."
