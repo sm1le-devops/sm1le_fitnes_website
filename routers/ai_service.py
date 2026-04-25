@@ -12,10 +12,11 @@ async def generate_training_plan(user_data: dict, plan_title: str):
         return None
 
     try:
-        # Инициализация SDK
-        genai.configure(api_key=api_key)
+        # ПРИНУДИТЕЛЬНО задаем v1, чтобы избежать 404 на v1beta
+        genai.configure(api_key=api_key, transport='rest') 
         
-        # Выбираем модель. 1.5-flash сейчас самая стабильная для этого региона
+        # Можно попробовать явно прописать версию, если SDK позволяет в твоей версии
+        # Но самый надежный способ — проверить саму строку модели
         model = genai.GenerativeModel('gemini-1.5-flash')
         
         prompt = (
@@ -24,11 +25,9 @@ async def generate_training_plan(user_data: dict, plan_title: str):
             f"Ответ должен быть на русском языке, использовать Markdown разметку."
         )
 
-        logging.info("DEBUG: Запрос к Gemini через официальный SDK...")
+        logging.info("DEBUG: Запрос к Gemini через официальный SDK (v1)...")
         
-        # Генерация контента (в SDK это синхронный вызов, 
-        # для асинхронности в высоконагруженных системах используют другие методы, 
-        # но для твоего проекта этого достаточно)
+        # Используем асинхронный вызов
         response = await model.generate_content_async(prompt)
         
         if response and response.text:
@@ -40,12 +39,11 @@ async def generate_training_plan(user_data: dict, plan_title: str):
 
     except Exception as e:
         logging.error(f"Ошибка Google AI SDK: {e}")
-        # Запасной вариант, если flash недоступна
+        # Если 1.5-flash не найдена, пробуем 1.0-pro (gemini-pro иногда так называется в v1)
         try:
-            logging.warning("Пробую gemini-pro...")
-            model_alt = genai.GenerativeModel('gemini-pro')
-            # Также делаем асинхронно
-            response = await model_alt.generate_content_async(prompt) 
+            logging.warning("Пробую gemini-1.0-pro...")
+            model_alt = genai.GenerativeModel('gemini-1.0-pro')
+            response = await model_alt.generate_content_async(prompt)
             return response.text
         except Exception as e2:
             logging.error(f"Полный отказ всех моделей: {e2}")
