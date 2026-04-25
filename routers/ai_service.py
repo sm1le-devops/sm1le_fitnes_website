@@ -84,7 +84,7 @@ async def generate_training_plan(user_data: dict, plan_title: str):
             response = await asyncio.wait_for(
                 run_in_threadpool(
                     client.models.generate_content,
-                    model="gemini-1.5-flash",
+                    model="gemini-2.0-flash",
                     contents=prompt
                 ),
                 timeout=15
