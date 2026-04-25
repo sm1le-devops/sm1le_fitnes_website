@@ -75,7 +75,7 @@ async def generate_training_plan(user_data: dict, plan_title: str):
     )
 
     max_retries = 3
-    delay = 1
+    delay = 5
 
     for attempt in range(1, max_retries + 1):
         try:
@@ -84,7 +84,7 @@ async def generate_training_plan(user_data: dict, plan_title: str):
             response = await asyncio.wait_for(
                 run_in_threadpool(
                     client.models.generate_content,
-                    model="gemini-2.0-flash",
+                    model="gemini-1.5-flash",
                     contents=prompt
                 ),
                 timeout=15
