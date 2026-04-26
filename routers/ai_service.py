@@ -34,9 +34,8 @@ def get_client():
         # Используем стабильную версию API v1
         _client = genai.Client(
             api_key=api_key,
-            http_options={'api_version': 'v1'} 
+            http_options={'api_version': 'v1beta'} 
         )
-        logging.info("✅ Gemini клиент инициализирован (v1)")
     return _client
 
 # --- Ключ кеша ---
@@ -78,13 +77,13 @@ async def generate_training_plan(user_data: dict, plan_title: str):
 
     for attempt in range(1, max_retries + 1):
         try:
-            logging.info(f"📡 Попытка {attempt}: запрос к Gemini (1.5-flash-8b)...")
+            logging.info(f"📡 Попытка {attempt}: запрос к Gemini (1.5-flash)...")
 
             # Используем 1.5-flash-8b и увеличили таймаут до 30с
             response = await asyncio.wait_for(
                 run_in_threadpool(
                     client.models.generate_content,
-                    model="gemini-1.5-flash-8b", 
+                    model="gemini-1.5-flash", 
                     contents=prompt
                 ),
                 timeout=30
