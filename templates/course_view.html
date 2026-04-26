@@ -271,20 +271,19 @@
     </script>
 
     <script>
-        // --- 1. БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ДАННЫХ (Вставляем сюда) ---
+        // --- 1. БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ДАННЫХ ---
         const rawContent = document.getElementById('plan-data-raw').textContent;
         let planData = null;
 
         try {
-            // Используем JSON.parse, чтобы "Привет!" не вызывало ошибок
             planData = JSON.parse(rawContent);
-            console.log("Данные курса загружены:", planData);
+            console.log("Данные курса загружены");
         } catch (e) {
             console.error("Ошибка парсинга плана:", e);
+            planData = rawContent.trim(); // Если не JSON, считаем просто строкой
         }
-        // -------------------------------------------------------
 
-        // 2. Логика покупки (без изменений)
+        // --- 2. ЛОГИКА ПОКУПКИ (STRIPE) ---
         const stripeBtn = document.getElementById('stripe-button');
         if (stripeBtn) {
             const stripe = Stripe('{{ stripe_publishable_key }}');
@@ -308,55 +307,92 @@
             });
         }
 
-        // 3. Функция отображения (использует наш planData)
+        // --- 3. ФУНКЦИЯ ОТОБРАЖЕНИЯ (УМНАЯ) ---
         function showDay(index) {
             const container = document.getElementById('exerciseList');
+            const selector = document.getElementById('daySelector');
             if (!container) return;
 
-            // Если план — строка (Markdown от ИИ)
+            // ЛОГИКА ДЛЯ ГЕНЕРИРУЕМОГО ПЛАНА (Markdown строка)
             if (typeof planData === 'string') {
+                if (selector) selector.style.display = 'none'; // Скрываем переключатель дней, так как план сплошной
+
+                // Используем библиотеку marked (у тебя она подключена в head) для рендера Markdown
                 container.innerHTML = `
-                    <div class="exercise-card" style="line-height: 1.6; font-size: 1.05rem; white-space: pre-wrap;">
-                        ${typeof marked !== 'undefined' ? marked.parse(planData) : planData}
+                <div class="exercise-card" style="line-height: 1.6; font-size: 1.05rem; white-space: normal; background: var(--card); border: 1px solid rgba(249, 115, 22, 0.2);">
+                    <div class="markdown-content">
+                        ${marked.parse(planData)}
                     </div>
-                `;
-                const selector = document.getElementById('daySelector');
-                if (selector) selector.style.display = 'none';
+                </div>
+            `;
                 return;
             }
 
-            // Стандартная логика для готовых планов (массивов)
-            if (!planData || !planData.days || !planData.days[index]) {
-                container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--muted);"><h3>Скоро здесь будет тренировка</h3></div>`;
-                return;
-            }
+            // ЛОГИКА ДЛЯ СТАТИЧЕСКИХ КУРСОВ (Массив дней)
+            if (planData && planData.days) {
+                document.querySelectorAll('.day-btn').forEach((btn, i) => {
+                    btn.classList.toggle('active', i === index);
+                });
 
-            document.querySelectorAll('.day-btn').forEach((btn, i) => {
-                btn.classList.toggle('active', i === index);
-            });
+                const day = planData.days[index];
+                if (!day) return;
 
-            const day = planData.days[index];
-            let htmlContent = `<div class="day-header"><h2>${day.title}</h2><p>${day.description || ''}</p></div>`;
+                let htmlContent = `<div class="day-header"><h2>${day.title}</h2><p>${day.description || ''}</p></div>`;
 
-            if (day.exercises && day.exercises.length > 0) {
-                htmlContent += day.exercises.map(ex => `
+                if (day.exercises) {
+                    htmlContent += day.exercises.map(ex => `
                     <div class="exercise-card">
                         <h3>${ex.name}</h3>
-                        <div class="meta"><span>${ex.sets} подходов</span><span>${ex.reps} повторений</span></div>
+                        <div class="meta"><span>${ex.sets || ''}</span> <span>${ex.reps || ''}</span></div>
                         ${ex.image_url ? `<div class="exercise-image-container"><img src="${ex.image_url}" class="exercise-image"></div>` : ''}
                     </div>
                 `).join('');
+                }
+                container.innerHTML = htmlContent;
+            } else {
+                container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--muted);"><h3>План еще не сформирован. Заполните анкету.</h3></div>`;
             }
-            container.innerHTML = htmlContent;
         }
 
-        // 4. Инициализация
+        // --- 4. ИНИЦИАЛИЗАЦИЯ ---
         document.addEventListener('DOMContentLoaded', () => {
-            if (document.getElementById('exerciseList')) {
-                showDay(0);
-            }
+            showDay(0);
         });
     </script>
+
+    <style>
+        /* Добавим немного стилей для красоты текста внутри Markdown */
+        .markdown-content h1,
+        .markdown-content h2 {
+            color: var(--accent);
+            margin-top: 1.5em;
+        }
+
+        .markdown-content h3 {
+            color: var(--text);
+            border-bottom: 1px solid #334155;
+            padding-bottom: 5px;
+        }
+
+        .markdown-content ul {
+            padding-left: 20px;
+        }
+
+        .markdown-content li {
+            margin-bottom: 10px;
+        }
+
+        .markdown-content p {
+            margin-bottom: 15px;
+        }
+
+        .markdown-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 10px 20px;
+            background: rgba(249, 115, 22, 0.05);
+            margin: 20px 0;
+        }
+    </style>
 </body>
 
 </html>
