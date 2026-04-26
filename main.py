@@ -76,7 +76,11 @@ def create_pdf_buffer(plan_text):
     
     # Автоматический перенос строк (multi_cell)
     for line in clean_text.split('\n'):
-        pdf.multi_cell(0, 10, txt=line)
+        line = line.strip()
+        if line:
+            pdf.multi_cell(0, 10, txt=line)
+        else:
+            pdf.ln(5)
     
     try:
         # dest='S' принудительно возвращает документ как байтовую строку (String/Bytes)

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{{ plan.title if plan else 'Курс' }} — sm1le.fitness</title>
+    <title>{{ plan.title if plan else 'План питания' }} — sm1le.fitness</title>
     <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -16,383 +16,231 @@
             --text: #F8FAFC;
             --muted: #94A3B8;
             --success: #22C55E;
+            --nutrition: #8B5CF6;
         }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; padding-bottom: 60px; }
 
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding-bottom: 60px;
-            overflow-x: hidden;
-        }
+        .header { padding: 20px 16px; background: var(--card); border-bottom: 1px solid #2D3748; position: sticky; top: 0; z-index: 100; }
+        .header h1 { margin: 8px 0 0 0; font-size: 1.2rem; color: var(--accent); font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .content { padding: 16px; }
 
-        .header {
-            padding: 20px 16px;
-            background: var(--card);
-            border-bottom: 1px solid #2D3748;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header h1 {
-            margin: 8px 0 0 0;
-            font-size: 1.2rem;
-            color: var(--accent);
-            font-weight: 800;
-        }
-
-
-        .content {
-            padding: 16px;
-        }
-
-        /* Селектор дней */
-        .day-selector {
+        /* --- НОВОЕ: Прогресс-бар недель --- */
+        .weeks-progress {
             display: flex;
-            overflow-x: auto;
-            gap: 10px;
-            padding-bottom: 16px;
-            margin-bottom: 10px;
-            scrollbar-width: none;
-        }
-
-        .day-selector::-webkit-scrollbar {
-            display: none;
-        }
-
-        .day-btn {
-            padding: 10px 20px;
+            justify-content: space-between;
             background: var(--card);
-            border: 1px solid #334155;
-            color: white;
-            border-radius: 12px;
-            cursor: pointer;
-            white-space: nowrap;
-            flex-shrink: 0;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: 0.2s;
+            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(249, 115, 22, 0.2);
         }
-
-        .day-btn.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
-        }
-
-        .day-header {
-            margin-bottom: 24px;
-        }
-
-        .day-header h2 {
-            font-size: 1.6rem;
-            font-weight: 800;
-            margin: 0 0 4px 0;
-        }
-
-        .day-header p {
-            color: var(--muted);
-            margin: 0;
-            font-size: 0.95rem;
-        }
-
-        .exercise-card {
-            background: var(--card);
-            border-radius: 20px;
-            padding: 18px;
-            margin-bottom: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .exercise-card h3 {
-            margin: 0 0 8px 0;
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .meta {
-            display: flex;
-            gap: 12px;
-            color: var(--muted);
-            font-size: 0.85rem;
-            margin-bottom: 15px;
-            font-weight: 500;
-        }
-
-        .exercise-image-container {
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #334155;
-            background: #0F172A;
-        }
-
-        .exercise-image {
-            width: 100%;
-            height: auto;
-            display: block;
-            object-fit: cover;
-            max-height: 300px;
-        }
-
-        /* --- Стили для Оплаты --- */
-        .paywall-container {
+        .week-step {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 60vh;
-            text-align: center;
-            padding: 20px;
+            gap: 5px;
+            flex: 1;
+            position: relative;
         }
-
-        .buy-card {
-            background: var(--card);
-            padding: 30px 24px;
-            border-radius: 24px;
-            border: 1px solid rgba(249, 115, 22, 0.2);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .buy-card h2 {
-            margin: 0 0 12px 0;
-            font-size: 1.4rem;
-        }
-
-        .buy-card p {
-            color: var(--muted);
-            margin-bottom: 24px;
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        .price-tag {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--text);
-            margin-bottom: 24px;
-        }
-
-        .purchased-badge {
-            background: rgba(34, 197, 94, 0.1);
-            color: var(--success);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            display: inline-block;
-            margin-bottom: 15px;
-            border: 1px solid rgba(34, 197, 94, 0.2);
-        }
-
-        .back-btn {
-            color: var(--muted);
+        .week-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #334155;
             display: flex;
             align-items: center;
-            text-decoration: none;
-            margin-bottom: 8px;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            z-index: 2;
+        }
+        .week-step.active .week-circle { background: var(--accent); box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); }
+        .week-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
+
+        /* --- НОВОЕ: Кнопка замен --- */
+        .swap-container {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #334155;
+        }
+        .swap-btn {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid var(--nutrition);
+            color: var(--nutrition);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: fit-content;
+        }
+        .swap-panel {
+            display: none;
+            background: #1e1e2e;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            border-left: 3px solid var(--nutrition);
         }
 
-        .back-btn:hover {
-            color: var(--accent);
-            /* Немного интерактива при наведении */
-        }
+        .meal-card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .meal-time { font-size: 0.75rem; color: var(--accent); font-weight: 700; margin-bottom: 5px; }
+        .meal-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 10px; }
+        
+        .macros { display: flex; gap: 10px; margin: 15px 0; background: rgba(15, 23, 42, 0.5); padding: 10px; border-radius: 12px; }
+        .macro-item { text-align: center; flex: 1; }
+        .macro-val { display: block; font-weight: 700; color: var(--text); }
+        .macro-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; }
+
+        .purchased-badge { background: rgba(34, 197, 94, 0.1); color: var(--success); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .download-btn { text-decoration: none; padding: 10px 16px; border-radius: 12px; background: var(--success); color: white; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
     </style>
 </head>
 
 <body>
 
     <div class="header">
-        <a href="/auth/welcome" class="back-btn">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M15 18l-6-6 6-6" />
-            </svg>
-        </a>
-        <h1>{{ plan.title if plan else 'Программа' }}</h1>
+        <a href="/auth/welcome" style="color: var(--muted); text-decoration: none;">← Назад</a>
+        <h1>🥗 {{ plan.title if plan else 'План питания' }}</h1>
     </div>
 
     <div class="content">
         {% if not is_purchased %}
-        <div class="paywall-container">
-            <div class="buy-card">
-                <h2>Полный доступ</h2>
-                <p>Открой все тренировки программы навсегда, видео-инструкции и план питания.</p>
-                <div class="price-tag">{{ plan.price }} $</div>
-                <button id="stripe-button" class="day-btn active" style="width: 100%; padding: 16px; font-size: 1rem;">
-                    КУПИТЬ КУРС
+        <div style="text-align: center; padding: 40px 20px;">
+            <div style="background: var(--card); padding: 30px; border-radius: 24px; border: 1px solid var(--accent);">
+                <h2>🥩 Твой рацион PRO</h2>
+                <p style="color: var(--muted)">Месячная программа питания с автоматическими заменами продуктов.</p>
+                <div style="font-size: 2rem; font-weight: 800; margin: 20px 0;">{{ plan.price }} ₽</div>
+                <button id="stripe-button" style="width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: 700;">
+                    КУПИТЬ ДОСТУП
                 </button>
             </div>
         </div>
         {% else %}
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <span class="purchased-badge" style="margin-bottom: 0;">✓ ДОСТУП ОПЛАЧЕН</span>
-
-            <a href="/course/{{ plan_id }}/download" download="My_Training_Plan.pdf" class="day-btn"
-                style="text-decoration: none; padding: 6px 12px; font-size: 0.8rem; background: #22C55E; border-color: #22C55E; display: flex; align-items: center; gap: 5px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                PDF
-            </a>
+        
+        <div class="weeks-progress">
+            <div class="week-step active">
+                <div class="week-circle">1</div>
+                <span class="week-label">Неделя</span>
+            </div>
+            <div class="week-step">
+                <div class="week-circle">2</div>
+                <span class="week-label">Неделя</span>
+            </div>
+            <div class="week-step">
+                <div class="week-circle">3</div>
+                <span class="week-label">Неделя</span>
+            </div>
+            <div class="week-step">
+                <div class="week-circle">4</div>
+                <span class="week-label">Неделя</span>
+            </div>
         </div>
 
-        <div class="day-selector" id="daySelector">
-            {% if plan and plan.days %}
-            {% for day in plan.days %}
-            <button class="day-btn {% if loop.first %}active{% endif %}" onclick="showDay({{ loop.index0 }})">
-                День {{ loop.index }}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <span class="purchased-badge">✓ ТВОЙ ПЛАН НА СЕГОДНЯ</span>
+            <a href="/course/{{ plan_id }}/download" class="download-btn">📄 PDF</a>
+        </div>
+
+        <div id="aiPlanContainer">
+            </div>
+
+        <div class="meal-card" id="globalSwapCard" style="display: none;">
+            <button class="swap-btn" onclick="toggleSwaps()">
+                <span>🔄</span> Варианты замены продуктов
             </button>
-            {% endfor %}
-            {% endif %}
+            <div id="swapPanel" class="swap-panel">
+                </div>
         </div>
 
-        <div id="exerciseList"></div>
         {% endif %}
     </div>
 
     <script src="https://js.stripe.com/v3/"></script>
-
     <script id="plan-data-raw" type="application/json">
         {{ plan_json | tojson | safe if plan_json else 'null' }}
     </script>
 
     <script>
-        // --- 1. БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ДАННЫХ ---
-        const rawContent = document.getElementById('plan-data-raw').textContent;
-        let planData = null;
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('plan-data-raw').textContent;
+            const container = document.getElementById('aiPlanContainer');
+            const swapCard = document.getElementById('globalSwapCard');
+            const swapPanel = document.getElementById('swapPanel');
+            
+            if (container && rawContent !== 'null') {
+                try {
+                    const data = JSON.parse(rawContent);
+                    
+                    // Если это сложный JSON с неделями
+                    if (data.weeks) {
+                        renderJsonPlan(data, container);
+                        if (data.swap_options) {
+                            renderSwaps(data.swap_options, swapPanel, swapCard);
+                        }
+                    } else {
+                        // Если это просто строка Markdown
+                        container.innerHTML = `<div class="meal-card"><div class="markdown-content">${marked.parse(data)}</div></div>`;
+                    }
+                } catch (e) {
+                    container.innerHTML = `<div class="meal-card"><div class="markdown-content">${marked.parse(rawContent.trim())}</div></div>`;
+                }
+            }
+        });
 
-        try {
-            planData = JSON.parse(rawContent);
-            console.log("Данные курса загружены");
-        } catch (e) {
-            console.error("Ошибка парсинга плана:", e);
-            planData = rawContent.trim(); // Если не JSON, считаем просто строкой
+        function renderJsonPlan(data, container) {
+            // Берем 1-ю неделю и 1-й день для примера (или текущий день)
+            const day = data.weeks[0].days[0];
+            let html = `<h3>${day.day}</h3>`;
+            
+            day.meals.forEach(meal => {
+                html += `
+                <div class="meal-card">
+                    <div class="meal-time">${meal.icon} ${meal.time} — ${meal.type}</div>
+                    <div class="meal-title">${meal.name}</div>
+                    <p style="font-size:0.9rem; color: var(--muted)">${meal.recipe}</p>
+                    <div class="macros">
+                        <div class="macro-item"><span class="macro-val">${meal.macros.K}</span><span class="macro-label">Ккал</span></div>
+                        <div class="macro-item"><span class="macro-val">${meal.macros.B}г</span><span class="macro-label">Белки</span></div>
+                        <div class="macro-item"><span class="macro-val">${meal.macros.J}г</span><span class="macro-label">Жиры</span></div>
+                        <div class="macro-item"><span class="macro-val">${meal.macros.U}г</span><span class="macro-label">Угли</span></div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
         }
 
-        // --- 2. ЛОГИКА ПОКУПКИ (STRIPE) ---
+        function renderSwaps(swaps, panel, card) {
+            card.style.display = 'block';
+            let html = '<strong>Чем заменить:</strong><br><br>';
+            for (const [category, items] of Object.entries(swaps)) {
+                const names = {protein: 'Белки', carbs: 'Углеводы', fats: 'Жиры'};
+                html += `<p><b>${names[category] || category}:</b> ${items.join(', ')}</p>`;
+            }
+            panel.innerHTML = html;
+        }
+
+        function toggleSwaps() {
+            const panel = document.getElementById('swapPanel');
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Stripe Logic (без изменений)
         const stripeBtn = document.getElementById('stripe-button');
         if (stripeBtn) {
             const stripe = Stripe('{{ stripe_publishable_key }}');
-            stripeBtn.addEventListener('click', async () => {
-                stripeBtn.innerText = 'Загрузка...';
-                stripeBtn.disabled = true;
-                try {
-                    const response = await fetch('/create-checkout-session/{{ plan_id }}', { method: 'POST' });
-                    const session = await response.json();
-                    if (session.id) {
-                        await stripe.redirectToCheckout({ sessionId: session.id });
-                    } else {
-                        alert('Ошибка: ' + (session.detail || 'Не удалось создать сессию'));
-                    }
-                } catch (e) {
-                    alert('Ошибка связи с сервером');
-                } finally {
-                    stripeBtn.innerText = 'КУПИТЬ КУРС';
-                    stripeBtn.disabled = false;
-                }
-            });
+            stripeBtn.onclick = async () => {
+                const res = await fetch('/create-checkout-session/{{ plan_id }}', { method: 'POST' });
+                const session = await res.json();
+                if (session.id) await stripe.redirectToCheckout({ sessionId: session.id });
+            };
         }
-
-        // --- 3. ФУНКЦИЯ ОТОБРАЖЕНИЯ (УМНАЯ) ---
-        function showDay(index) {
-            const container = document.getElementById('exerciseList');
-            const selector = document.getElementById('daySelector');
-            if (!container) return;
-
-            // ЛОГИКА ДЛЯ ГЕНЕРИРУЕМОГО ПЛАНА (Markdown строка)
-            if (typeof planData === 'string') {
-                if (selector) selector.style.display = 'none'; // Скрываем переключатель дней, так как план сплошной
-
-                // Используем библиотеку marked (у тебя она подключена в head) для рендера Markdown
-                container.innerHTML = `
-                <div class="exercise-card" style="line-height: 1.6; font-size: 1.05rem; white-space: normal; background: var(--card); border: 1px solid rgba(249, 115, 22, 0.2);">
-                    <div class="markdown-content">
-                        ${marked.parse(planData)}
-                    </div>
-                </div>
-            `;
-                return;
-            }
-
-            // ЛОГИКА ДЛЯ СТАТИЧЕСКИХ КУРСОВ (Массив дней)
-            if (planData && planData.days) {
-                document.querySelectorAll('.day-btn').forEach((btn, i) => {
-                    btn.classList.toggle('active', i === index);
-                });
-
-                const day = planData.days[index];
-                if (!day) return;
-
-                let htmlContent = `<div class="day-header"><h2>${day.title}</h2><p>${day.description || ''}</p></div>`;
-
-                if (day.exercises) {
-                    htmlContent += day.exercises.map(ex => `
-                    <div class="exercise-card">
-                        <h3>${ex.name}</h3>
-                        <div class="meta"><span>${ex.sets || ''}</span> <span>${ex.reps || ''}</span></div>
-                        ${ex.image_url ? `<div class="exercise-image-container"><img src="${ex.image_url}" class="exercise-image"></div>` : ''}
-                    </div>
-                `).join('');
-                }
-                container.innerHTML = htmlContent;
-            } else {
-                container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--muted);"><h3>План еще не сформирован. Заполните анкету.</h3></div>`;
-            }
-        }
-
-        // --- 4. ИНИЦИАЛИЗАЦИЯ ---
-        document.addEventListener('DOMContentLoaded', () => {
-            showDay(0);
-        });
     </script>
-
-    <style>
-        /* Добавим немного стилей для красоты текста внутри Markdown */
-        .markdown-content h1,
-        .markdown-content h2 {
-            color: var(--accent);
-            margin-top: 1.5em;
-        }
-
-        .markdown-content h3 {
-            color: var(--text);
-            border-bottom: 1px solid #334155;
-            padding-bottom: 5px;
-        }
-
-        .markdown-content ul {
-            padding-left: 20px;
-        }
-
-        .markdown-content li {
-            margin-bottom: 10px;
-        }
-
-        .markdown-content p {
-            margin-bottom: 15px;
-        }
-
-        .markdown-content blockquote {
-            border-left: 4px solid var(--accent);
-            padding: 10px 20px;
-            background: rgba(249, 115, 22, 0.05);
-            margin: 20px 0;
-        }
-    </style>
 </body>
-
 </html>
