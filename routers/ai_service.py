@@ -5,7 +5,7 @@ import hashlib
 import json
 
 from google import genai
-from google.genai import types # Импортируем типы для конфига
+from google.genai import types 
 from dotenv import load_dotenv
 
 import redis.asyncio as redis
@@ -26,9 +26,9 @@ def get_client():
         if not api_key:
             raise RuntimeError("GEMINI_API_KEY не установлен")
         
-        # Убираем жесткое указание версии здесь, доверяем SDK
+        # Используем API-ключ из твоего рабочего проекта Gsm1le (Free tier)
         _client = genai.Client(api_key=api_key)
-        logging.info("✅ Асинхронный Gemini клиент инициализирован")
+        logging.info("✅ Gemini клиент инициализирован")
     return _client
 
 # --- Ключ кеша ---
@@ -58,26 +58,32 @@ async def generate_training_plan(user_data: dict, plan_title: str):
         f"Ответ должен быть на русском языке и использовать Markdown."
     )
 
-    # Используем 2.0 Flash, так как она видна в твоей AI Studio
-    model_name = "gemini-2.0-flash" 
+    # ИЗМЕНЕНИЕ 1: Используем 1.5 Flash. У неё ЕСТЬ лимиты на Free Tier, в отличие от 2.0.
+    model_name = "gemini-1.5-flash" 
 
     for attempt in range(1, 4):
         try:
             logging.info(f"📡 Попытка {attempt}: запрос к {model_name}...")
 
-            # Прямой асинхронный вызов через client.aio
             response = await client.aio.models.generate_content(
                 model=model_name,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=0.7,
-                    max_output_tokens=2048
+                    max_output_tokens=2048,
+                    # ИЗМЕНЕНИЕ 2: Снижаем пороги фильтрации, чтобы API не блокировал фитнес-советы
+                    safety_settings=[
+                        types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
+                        types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
+                    ]
                 )
             )
 
-            text = response.text
-            if not text:
-                raise ValueError("Пустой ответ от модели")
+            # Проверка, есть ли текст в ответе (защита от пустых ответов из-за фильтров)
+            if response.candidates and response.candidates[0].content.parts:
+                text = response.candidates[0].content.parts[0].text
+            else:
+                raise ValueError("Модель не смогла сгенерировать текст (возможно, сработал фильтр)")
 
             try:
                 await redis_client.set(cache_key, text, ex=3600)
@@ -89,9 +95,13 @@ async def generate_training_plan(user_data: dict, plan_title: str):
 
         except Exception as e:
             error_msg = str(e)
-            logging.warning(f"🔁 Ошибка API ({error_msg}). Повтор...")
-            if attempt < 3:
-                await asyncio.sleep(10 * attempt) # Ждем 10с, потом 20с
+            # Если видим ошибку 429 (Too Many Requests), ждем дольше
+            if "429" in error_msg:
+                logging.warning(f"⏳ Превышен лимит (429). Ждем дольше...")
+                await asyncio.sleep(20 * attempt)
+            else:
+                logging.warning(f"🔁 Ошибка API ({error_msg}). Повтор через {10 * attempt}с...")
+                await asyncio.sleep(10 * attempt)
 
     logging.error("💥 Все попытки провалены")
-    return "❌ Ошибка нейросети. Попробуйте позже."
+    return "❌ Ошибка нейросети (лимиты или фильтры). Попробуйте позже."
