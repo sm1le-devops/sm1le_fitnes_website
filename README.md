@@ -1,33 +1,39 @@
-MyFastAPIApp_top_donators
-Description
+💸 Donation Platform
 
-## Description
-MyFastAPIApp is a FastAPI web application with support for user registration and authentication, the ability to make donations, send emails, manage profiles (change password, email, avatar), as well as protection via CSRF tokens and cookies. The application uses MySQL for data storage and supports logging of user actions.
+A modern web platform for handling donations with a ranking system and donor leaderboard.
 
-**The website is available at:** https://top-donators.onrender.com
+🚀 Features
+💳 Stripe Payments — secure donation processing
+🏆 Ranking System — users get ranks based on donations
+📊 Leaderboard — top donors table
+👤 Authentication — login & registration system
+🤖 AI Content — personalized content generation
+📄 PDF Export — download generated content
+🔐 Security
+CSRF protection
+Secure cookies (HTTPS ready)
+Stripe webhook verification
+Input validation
+🛠️ Tech Stack
+FastAPI
+SQLAlchemy
+Stripe API
+Redis
+Jinja2
+FPDF
+python
+javascript
+css html 
 
-## Key Features
-- User registration and login
-- Change password and email
-- Upload and change user avatar
-- Support for multiple pages
-- Donations
-- Sending email notifications
-- CSRF protection
-- Working with cookies
-- Logging user actions
-- Connection to MySQL database
+<img width="751" height="1546" alt="phot" src="https://github.com/user-attachments/assets/add18fba-1351-43d2-8e7b-85ed6b91095f" />
+<img width="749" height="1348" alt="1" src="https://github.com/user-attachments/assets/7bca8cd5-6e5e-4176-97c6-579f80137bc0" />
 
-## Technologies Used
-- Python 3.11+
-- FastAPI
-- SQLAlchemy
-- MySQL
-- Docker (optional for containerization)
-- Ngrok (for local webhook)
-- Uvicorn (ASGI server)
-![Stephoto](images/1.png)
-![Stephoto](images/phot.png)
+✅ Advantages
+Clean backend architecture
+Scalable donation system
+Ready for gamification (ranks & leaderboard)
+Easy to extend and customize
+
 ## Installation and Running
 
 ### 1. Clone the repository
