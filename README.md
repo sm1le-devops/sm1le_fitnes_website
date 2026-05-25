@@ -1,50 +1,21 @@
-💸 Donation Platform
+sm1le fitness
+Welcome to sm1le fitness, a modern, high-performance platform dedicated to helping you achieve your health goals. Our site offers a streamlined experience for purchasing monthly gym memberships and accessing professional-grade workout and nutrition programs.
 
-A modern web platform for handling donations with a ranking system and donor leaderboard.
+🚀 Platform Overview
+sm1le fitness is built to be fast, responsive, and user-friendly. We leverage the speed of FastAPI to ensure that browsing training plans and processing subscriptions is seamless, while our clean frontend design keeps you focused on your progress.
 
-🚀 Features
-💳 Stripe Payments — secure donation processing
-🏆 Ranking System — users get ranks based on donations
-📊 Leaderboard — top donors table
-👤 Authentication — login & registration system
-🤖 AI Content — personalized content generation
-📄 PDF Export — download generated content
-🔐 Security
-CSRF protection
-Secure cookies (HTTPS ready)
-Stripe webhook verification
-Input validation
-🛠️ Tech Stack
-FastAPI
-SQLAlchemy
-Stripe API
-Redis
-Jinja2
-FPDF
-python
-javascript
-css html 
+🛠 Tech Stack
+Backend: FastAPI (High-performance Python web framework)
 
-<img width="751" height="1546" alt="phot" src="https://github.com/user-attachments/assets/add18fba-1351-43d2-8e7b-85ed6b91095f" />
-<img width="749" height="1348" alt="1" src="https://github.com/user-attachments/assets/7bca8cd5-6e5e-4176-97c6-579f80137bc0" />
+Frontend: * HTML5 / CSS3: For a semantic, modern, and responsive layout.
 
-✅ Advantages
-Clean backend architecture
-Scalable donation system
-Ready for gamification (ranks & leaderboard)
-Easy to extend and customize
+JavaScript: To provide an interactive user experience and dynamic content loading.
 
-## Installation and Running
+💡 Core Features
+Monthly Membership Access: Secure, automated monthly subscription management for gym access.
 
-### 1. Clone the repository
-```bash
-git clone <repository_URL>
-cd <project_folder>
-2. Create a virtual environment (optional but recommended)
- python -m venv venv
- source venv/bin/activate   # Linux/macOS
- venv\Scripts\activate      # Windows
-3-Install dependencies
- pip install -r requirements.txt
+Expert Training Programs: Purchase and download structured workout plans tailored to your fitness level.
 
+Nutrition Planning: Gain access to meal plans designed by professionals to support your specific fitness goals.
 
+Secure Payment Integration: Reliable checkout process ensuring your membership and programs are activated instantly.
