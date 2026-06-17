@@ -1,21 +1,29 @@
-🏋️‍♂️ Sm1le-Fitness | Backend-Powered Health Platform
-Welcome to Sm1le-Fitness, a high-performance, scalable SaaS platform designed to bridge the gap between professional fitness guidance and seamless digital user experience.
+🏋️‍♂️ Sm1le-Fitness | Fitness Ecosystem
+Sm1le-Fitness is a high-performance, scalable SaaS platform designed to deliver personalized fitness and nutrition guidance through a secure and robust digital experience.
 
 🏗️ Architecture & Backend Expertise
-At the core of Sm1le-Fitness lies a robust, Python-driven backend architecture. This project was built with a primary focus on data integrity, high-concurrency performance, and secure user management.
+The platform is built with a focus on data integrity, scalability, and security, utilizing a modern Python-driven stack.
 
-Database Design: Sophisticated relational database architecture managing complex relationships between Users, Courses, Subscriptions, and Progress tracking.
+Secure Auth & Sessions: Engineered a multi-layered authentication system using bcrypt for password hashing and Secure/HttpOnly cookie-based sessions to prevent XSS and session hijacking.
 
-Recommendation Engine: Custom Python algorithms that process user data to generate personalized workout and nutrition plans.
+Stripe Payment Lifecycle: Implemented a full payment integration, managing Stripe checkout sessions and asynchronous webhooks to ensure real-time, automated access provisioning.
 
-Security First: Implementation of secure session handling, cookie-based authentication, and encrypted data management protocols.
+Database Design: Architected a robust PostgreSQL relational schema to manage complex relationships between users, fitness metrics, and AI-generated content (utilizing JSON columns for flexible data storage).
 
-Performance: Built on FastAPI, ensuring low-latency response times for dynamic content loading and subscription processing.
+Recommendation Engine: Developed custom algorithms that process user-specific health data to generate tailored training and nutrition plans.
+
+Performance & Reliability: Built on FastAPI to ensure low-latency API response times, with Redis caching and FastAPI-Limiter to mitigate DDoS risks and manage high-concurrency traffic.
 
 🚀 Technical Stack
 Backend & Data
-Python (FastAPI): High-performance asynchronous API handling.
+Language: Python 3.x
 
-PostgreSQL: Secure, scalable relational database for structured data modeling.
+Framework: FastAPI (Asynchronous API design)
 
-Data Modeling: Advanced schema design for complex user/course relationships.
+Database: PostgreSQL (Relational modeling & ORM via SQLAlchemy)
+
+Caching/Queues: Redis
+
+Security: bcrypt, itsdangerous, Stripe Webhooks
+
+Infrastructure: Docker, Render (Deployment)
