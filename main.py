@@ -358,7 +358,7 @@ async def create_checkout_session(plan_id: str, user_data=Depends(get_current_ac
     if not plan:
         raise HTTPException(status_code=404, detail="План не найден")
 
-    raw_domain = os.getenv('YOUR_DOMAIN') or os.getenv('RENDER_EXTERNAL_URL') or "http://localhost:8000"
+    raw_domain = os.getenv('RENDER_EXTERNAL_URL') or os.getenv('YOUR_DOMAIN')  or "http://localhost:8000"
     current_domain = raw_domain.rstrip('/')
     price_in_cents = int(float(plan["price"]) * 100)
 
