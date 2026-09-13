@@ -103,7 +103,7 @@ async def login(data: LoginRequest, request: Request, db: Session = Depends(get_
 
     response = JSONResponse(content={"redirect_url": "/auth/welcome"})
     
-    # КУКА ТЕПЕРЬ СТРОГО НАСТРОЕНА ДЛЯ HTTPS
+    # КУКА ТЕПЕРЬ СТРОГО НАСТРОЕНА ДЛЯ HTTPS    
     response.set_cookie(
         key="username", 
         value=db_user.username, 

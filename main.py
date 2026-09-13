@@ -444,3 +444,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                     logging.info(f"✅ ДОСТУП ПРЕДОСТАВЛЕН: {username} -> {plan_id}")
 
     return {"status": "success"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
