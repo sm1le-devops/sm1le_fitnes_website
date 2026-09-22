@@ -25,6 +25,12 @@ class User(Base):
     email = Column(String(254), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, nullable=False, server_default=text("true"))
+    email_verified = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=text("true"),
+    )
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,

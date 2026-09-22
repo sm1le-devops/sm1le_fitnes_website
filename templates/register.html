@@ -138,6 +138,23 @@
       transform: scale(0.97);
     }
 
+    .resend-button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    .resend-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     .footer-text {
       text-align: center;
       margin-top: 20px;
@@ -236,6 +253,16 @@
       </div>
       <button type="submit" class="btn-register">Зарегистрироваться</button>
     </form>
+
+    <button
+      type="button"
+      id="resend-button"
+      class="resend-button"
+      hidden
+    >
+      Отправить письмо повторно
+    </button>
+
     <div class="footer-text">
       Уже есть аккаунт? <a href="/auth/login">Войти</a>
     </div>
@@ -264,48 +291,127 @@
     </a>
   </nav>
   <script>
-    document.getElementById('register-form').onsubmit = async (e) => {
-      e.preventDefault();
-      const msgEl = document.getElementById('message');
+    const registerForm = document.getElementById('register-form');
+    const resendButton = document.getElementById('resend-button');
+    const msgEl = document.getElementById('message');
 
-      // Сброс стиля сообщения
+    let registeredEmail = '';
+
+    function getCsrfToken() {
+      const input = registerForm.querySelector(
+        'input[name="csrf_token"]'
+      );
+
+      return input ? input.value : '';
+    }
+
+    registerForm.onsubmit = async (e) => {
+      e.preventDefault();
+
       msgEl.innerText = 'Регистрация...';
       msgEl.style.color = 'var(--text-muted)';
 
-      // 1. Собираем данные из формы в объект
       const formData = new FormData(e.target);
-      const jsonData = Object.fromEntries(formData.entries());
+      const jsonData = Object.fromEntries(
+        formData.entries()
+      );
 
       try {
-        // 2. Отправляем запрос как JSON
-        const res = await fetch('/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(jsonData)
-        });
+        const res = await fetch(
+          '/auth/register',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(jsonData)
+          }
+        );
 
         const data = await res.json();
 
         if (res.ok) {
+          registeredEmail = jsonData.email;
+
           msgEl.style.color = '#22c55e';
-          msgEl.innerText = 'Успех! Переходим ко входу...';
-          setTimeout(() => window.location.href = '/auth/login', 1500);
+          msgEl.innerText =
+            'Аккаунт создан. Проверьте email и подтвердите адрес.';
+
+          registerForm
+            .querySelectorAll('input, button')
+            .forEach(element => {
+              element.disabled = true;
+            });
+
+          resendButton.hidden = false;
+          return;
+        }
+
+        msgEl.style.color = '#ef4444';
+
+        if (Array.isArray(data.detail)) {
+          msgEl.innerText = data.detail[0].msg;
         } else {
-          msgEl.style.color = '#ef4444';
-          // Если ошибка в формате FastAPI (массив detail), выводим первое сообщение
-          if (Array.isArray(data.detail)) {
-            msgEl.innerText = data.detail[0].msg;
-          } else {
-            msgEl.innerText = data.detail || 'Ошибка регистрации';
-          }
+          msgEl.innerText =
+            data.detail || 'Ошибка регистрации';
         }
       } catch (err) {
+        console.error(err);
         msgEl.style.color = '#ef4444';
-        msgEl.innerText = 'Ошибка соединения с сервером';
+        msgEl.innerText =
+          'Ошибка соединения с сервером';
       }
     };
+
+    resendButton.addEventListener(
+      'click',
+      async () => {
+        if (!registeredEmail) {
+          return;
+        }
+
+        resendButton.disabled = true;
+        resendButton.textContent = 'Отправляем...';
+
+        try {
+          const response = await fetch(
+            '/auth/resend-verification',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                email: registeredEmail,
+                csrf_token: getCsrfToken()
+              })
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            msgEl.style.color = '#ef4444';
+            msgEl.textContent =
+              data.detail || 'Не удалось отправить письмо';
+            return;
+          }
+
+          msgEl.style.color = '#22c55e';
+          msgEl.textContent = data.message;
+        } catch (error) {
+          console.error(error);
+          msgEl.style.color = '#ef4444';
+          msgEl.textContent = 'Ошибка сети';
+        } finally {
+          setTimeout(() => {
+            resendButton.disabled = false;
+            resendButton.textContent =
+              'Отправить письмо повторно';
+          }, 60000);
+        }
+      }
+    );
   </script>
 </body>
 

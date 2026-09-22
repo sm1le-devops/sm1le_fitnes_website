@@ -17,8 +17,22 @@ def get_csrf_from_page(client, path):
     assert token
     return token
 
+def test_register_creates_user_and_profile(
+    client,
+    db,
+    monkeypatch,
+):
+    async def fake_send_verification_email(
+        email,
+        verification_link,
+    ):
+        return None
 
-def test_register_creates_user_and_profile(client, db):
+    monkeypatch.setattr(
+        "routers.auth.send_verification_email",
+        fake_send_verification_email,
+    )
+
     csrf = get_csrf_from_page(
         client,
         "/auth/register",
@@ -36,17 +50,26 @@ def test_register_creates_user_and_profile(client, db):
 
     assert response.status_code == 200
     assert response.json()["message"] == "Success"
+    assert (
+        response.json()["verification_required"]
+        is True
+    )
 
     db.expire_all()
 
     user = (
         db.query(User)
-        .filter(User.username == "new_user")
+        .filter(
+            User.username == "new_user"
+        )
         .first()
     )
 
     assert user is not None
     assert user.profile is not None
+
+    assert user.email_verified is False
+
     assert (
         verify_password(
             "Password123!",

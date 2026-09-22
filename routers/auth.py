@@ -1,8 +1,11 @@
 from secrets import compare_digest
 from typing import Optional
 
+from pydantic import BaseModel, EmailStr
+
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Cookie,
     Depends,
     Form,
@@ -16,6 +19,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 import models
@@ -39,6 +43,17 @@ from services.login_security_service import (
     get_login_block,
     record_failed_login,
 )
+from services.email_verification_service import (
+    send_verification_email,
+)
+from services.registration_security_service import (
+    RateLimitBlock,
+    consume_registration_attempt,
+    consume_verification_resend_attempt,
+    consume_verification_token,
+    get_verification_user_id,
+    issue_verification_token,
+)
 from services.session_service import (
     SESSION_TTL_SECONDS,
     create_session,
@@ -49,6 +64,44 @@ router = APIRouter()
 templates = Jinja2Templates(
     directory="templates"
 )
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+    csrf_token: str
+
+
+def raise_registration_blocked(
+    block: RateLimitBlock,
+) -> None:
+    raise HTTPException(
+        status_code=429,
+        detail=(
+            "Слишком много запросов. "
+            "Попробуйте позже."
+        ),
+        headers={
+            "Retry-After": str(
+                max(block.retry_after, 1)
+            )
+        },
+    )
+
+
+def verification_link(
+    token: str,
+) -> str:
+    from core.config import settings
+
+    current_domain = (
+        settings.render_external_url
+        or settings.your_domain
+    ).rstrip("/")
+
+    return (
+        f"{current_domain}"
+        f"/auth/verify-email?token={token}"
+    )
 
 
 def check_csrf(
@@ -99,15 +152,33 @@ def raise_login_blocked(
 
 
 @router.post("/register")
-def register(
+async def register(
     user: schemas.UserCreate,
     request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     check_csrf(
         request.cookies.get("csrf_token"),
         user.csrf_token,
     )
+
+    redis = request.app.state.redis
+    client_ip = get_client_ip(
+        request
+    )
+
+    registration_block = (
+        await consume_registration_attempt(
+            redis=redis,
+            client_ip=client_ip,
+        )
+    )
+
+    if registration_block is not None:
+        raise_registration_blocked(
+            registration_block
+        )
 
     if not is_username_valid(
         user.username
@@ -120,6 +191,10 @@ def register(
             ),
         )
 
+    normalized_email = str(
+        user.email
+    ).strip().lower()
+
     existing_user = (
         db.query(models.User)
         .filter(
@@ -128,8 +203,10 @@ def register(
                 == user.username
             )
             | (
-                models.User.email
-                == user.email
+                func.lower(
+                    models.User.email
+                )
+                == normalized_email
             )
         )
         .first()
@@ -139,16 +216,18 @@ def register(
         raise HTTPException(
             status_code=400,
             detail=(
-                "Логин или Email уже заняты"
+                "Не удалось зарегистрировать "
+                "аккаунт с этими данными"
             ),
         )
 
     new_user = models.User(
         username=user.username,
-        email=user.email,
+        email=normalized_email,
         hashed_password=get_password_hash(
             user.password
         ),
+        email_verified=False,
     )
 
     new_user.profile = models.UserProfile()
@@ -157,6 +236,9 @@ def register(
 
     try:
         db.commit()
+        db.refresh(
+            new_user
+        )
 
     except IntegrityError:
         db.rollback()
@@ -164,13 +246,172 @@ def register(
         raise HTTPException(
             status_code=409,
             detail=(
-                "Логин или Email уже заняты"
+                "Не удалось зарегистрировать "
+                "аккаунт с этими данными"
             ),
         )
 
+    token = await issue_verification_token(
+        redis=redis,
+        user_id=new_user.id,
+        enforce_cooldown=False,
+    )
+
+    if token:
+        background_tasks.add_task(
+            send_verification_email,
+            new_user.email,
+            verification_link(token),
+        )
+
     return {
-        "message": "Success"
+        "message": "Success",
+        "verification_required": True,
     }
+
+
+@router.post("/resend-verification")
+async def resend_verification(
+    data: ResendVerificationRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    check_csrf(
+        request.cookies.get("csrf_token"),
+        data.csrf_token,
+    )
+
+    generic_response = {
+        "message": (
+            "Если аккаунт существует и email ещё "
+            "не подтверждён, письмо отправлено."
+        )
+    }
+
+    redis = request.app.state.redis
+    client_ip = get_client_ip(
+        request
+    )
+
+    resend_block = (
+        await consume_verification_resend_attempt(
+            redis=redis,
+            client_ip=client_ip,
+        )
+    )
+
+    if resend_block is not None:
+        raise_registration_blocked(
+            resend_block
+        )
+
+    normalized_email = str(
+        data.email
+    ).strip().lower()
+
+    user = (
+        db.query(models.User)
+        .filter(
+            func.lower(
+                models.User.email
+            )
+            == normalized_email
+        )
+        .first()
+    )
+
+    if (
+        user is None
+        or getattr(
+            user,
+            "email_verified",
+            False,
+        )
+    ):
+        return generic_response
+
+    token = await issue_verification_token(
+        redis=redis,
+        user_id=user.id,
+        enforce_cooldown=True,
+    )
+
+    if token:
+        background_tasks.add_task(
+            send_verification_email,
+            user.email,
+            verification_link(token),
+        )
+
+    return generic_response
+
+
+@router.get(
+    "/verify-email",
+    response_class=HTMLResponse,
+)
+async def verify_email(
+    token: str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    redis = request.app.state.redis
+
+    user_id = await get_verification_user_id(
+        redis=redis,
+        token=token,
+    )
+
+    if user_id is None:
+        return HTMLResponse(
+            content=(
+                "<h2>Ссылка недействительна или истекла.</h2>"
+                '<p><a href="/auth/register">Вернуться к регистрации</a></p>'
+            ),
+            status_code=400,
+        )
+
+    user = db.get(
+        models.User,
+        user_id,
+    )
+
+    if user is None:
+        return HTMLResponse(
+            content=(
+                "<h2>Аккаунт не найден.</h2>"
+                '<p><a href="/auth/register">Вернуться к регистрации</a></p>'
+            ),
+            status_code=404,
+        )
+
+    if not getattr(
+        user,
+        "email_verified",
+        False,
+    ):
+        user.email_verified = True
+
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+
+    await consume_verification_token(
+        redis=redis,
+        token=token,
+        user_id=user.id,
+    )
+
+    return HTMLResponse(
+        content=(
+            "<h2>Email подтверждён.</h2>"
+            '<p><a href="/auth/login">Войти в аккаунт</a></p>'
+        ),
+        status_code=200,
+    )
 
 
 @router.post("/login")
@@ -234,6 +475,16 @@ async def login(
             detail=(
                 "Неверный логин или пароль"
             ),
+        )
+
+    if not getattr(
+        db_user,
+        "email_verified",
+        True,
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Подтвердите email перед входом",
         )
 
     if not db_user.is_active:
