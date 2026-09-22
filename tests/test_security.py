@@ -5,7 +5,7 @@ from core.security import (
     validate_csrf_token,
     verify_password,
 )
-
+from core import security
 
 def test_csrf_token_is_valid():
     token = generate_csrf_token()
@@ -37,3 +37,28 @@ def test_username_validation():
     assert is_username_valid("bad name") is False
     assert is_username_valid("bad-name") is False
     assert is_username_valid("bad@name") is False
+
+def test_missing_password_hash_uses_dummy_verify(
+    monkeypatch,
+):
+    calls = []
+
+    def fake_dummy_verify(
+        *_args,
+        **_kwargs,
+    ):
+        calls.append(True)
+
+    monkeypatch.setattr(
+        security.pwd_context,
+        "dummy_verify",
+        fake_dummy_verify,
+    )
+
+    result = security.verify_password_or_dummy(
+        "Password123!",
+        None,
+    )
+
+    assert result is False
+    assert calls == [True]

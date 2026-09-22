@@ -29,6 +29,19 @@ def validate_csrf_token(token: str) -> bool:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+def verify_password_or_dummy(
+    plain_password: str,
+    hashed_password: str | None,
+) -> bool:
+    if hashed_password is None:
+        pwd_context.dummy_verify()
+        return False
+
+    return pwd_context.verify(
+        plain_password,
+        hashed_password,
+    )
+    
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 

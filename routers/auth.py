@@ -32,6 +32,7 @@ from core.security import (
     is_username_valid,
     validate_csrf_token,
     verify_password,
+    verify_password_or_dummy,
 )
 from database import get_db
 from dependencies import (
@@ -464,12 +465,13 @@ async def login(
         .first()
     )
 
-    password_is_valid = bool(
-        db_user
-        and verify_password(
-            data.password,
-            db_user.hashed_password,
-        )
+    password_is_valid = verify_password_or_dummy(
+        data.password,
+        (
+            db_user.hashed_password
+            if db_user is not None
+            else None
+        ),
     )
 
     if not password_is_valid:

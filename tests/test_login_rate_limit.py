@@ -231,7 +231,7 @@ def test_successful_login_clears_username_failure_counter(
 
     monkeypatch.setattr(
         auth,
-        "verify_password",
+        "verify_password_or_dummy",
         lambda *_args, **_kwargs: True,
     )
 

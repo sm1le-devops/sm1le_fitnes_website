@@ -1,18 +1,21 @@
-[tool.poetry]
+[project]
 name = "first_prj"
 version = "0.1.0"
 description = "FastAPI project"
-authors = ["Ivan Ivanov <ivan@example.com>"]
+authors = [
+    { name = "Ivan Ivanov", email = "ivan@example.com" }
+]
+requires-python = ">=3.12,<4.0"
+dynamic = ["dependencies"]
 
+[tool.poetry]
 packages = [
     { include = "first_prj" }
 ]
 
 [tool.poetry.dependencies]
-python = "^3.12"
-# Основные пакеты (из твоего списка)
 fastapi = "0.141.1"
-uvicorn = {extras = ["standard"], version = "0.23.2"}
+uvicorn = { extras = ["standard"], version = "0.23.2" }
 sqlalchemy = "2.0.20"
 pydantic = "2.12.5"
 pydantic-settings = "2.10.1"
@@ -30,13 +33,14 @@ Pillow = "12.3.0"
 psycopg2-binary = "2.9.10"
 fpdf2 = "2.7.8"
 aiosmtplib = "5.1.3"
-google-genai = "^1.73.1" 
+google-genai = "^1.73.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.1.1"
 ruff = "^0.16.8"
 mypy = "^2.3.1"
 pip-audit = "^2.10.1"
+httpx2 = "^2.13.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
