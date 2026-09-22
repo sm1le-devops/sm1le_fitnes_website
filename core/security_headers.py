@@ -11,8 +11,7 @@ CSP_POLICY = "; ".join(
     [
         "default-src 'self'",
         (
-            "script-src 'self' 'unsafe-inline' "
-            "https://js.stripe.com"
+            "script-src 'self' 'unsafe-inline' https://js.stripe.com https://cdn.jsdelivr.net"
         ),
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob:",
