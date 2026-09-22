@@ -4,12 +4,17 @@ from sqlalchemy.exc import IntegrityError
 from models import (
     GeneratedPlan,
     Purchase,
+    StripeWebhookEvent,
     User,
     UserProfile,
 )
 
 
-def create_user(db, username="user", email="user@example.com"):
+def create_user(
+    db,
+    username="user",
+    email="user@example.com",
+):
     user = User(
         username=username,
         email=email,
@@ -83,7 +88,10 @@ def test_generated_plan_user_plan_is_unique(db):
     "status",
     ["something", "pending", "broken"],
 )
-def test_purchase_rejects_unknown_status(db, status):
+def test_purchase_rejects_unknown_status(
+    db,
+    status,
+):
     user = create_user(db)
 
     db.add(
@@ -110,6 +118,28 @@ def test_purchase_rejects_negative_amount(db):
             status="paid",
             amount_cents=-1,
         )
+    )
+
+    with pytest.raises(IntegrityError):
+        db.commit()
+
+    db.rollback()
+
+
+def test_stripe_webhook_event_id_is_unique(db):
+    db.add_all(
+        [
+            StripeWebhookEvent(
+                event_id="evt_same",
+                event_type="checkout.session.completed",
+                stripe_session_id="cs_1",
+            ),
+            StripeWebhookEvent(
+                event_id="evt_same",
+                event_type="checkout.session.completed",
+                stripe_session_id="cs_1",
+            ),
+        ]
     )
 
     with pytest.raises(IntegrityError):
