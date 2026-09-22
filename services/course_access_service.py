@@ -59,7 +59,7 @@ def save_generated_plan(
     )
 
     if generated_plan:
-        generated_plan.content = content
+        generated_plan.content = content  # type: ignore[assignment]
     else:
         generated_plan = GeneratedPlan(
             user_id=user_id,

@@ -43,4 +43,6 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
+# Values required by Settings are loaded from environment variables at runtime.
+# Mypy cannot infer BaseSettings environment loading from a zero-argument call.
+settings = Settings()  # type: ignore[call-arg]

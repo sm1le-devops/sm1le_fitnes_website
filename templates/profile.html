@@ -246,8 +246,25 @@
         <label>Email</label>
         <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required>
 
+        <label>Текущий пароль</label>
+        <input
+          type="password"
+          id="current-password"
+          name="current_password"
+          autocomplete="current-password"
+          placeholder="Нужен только для смены email или пароля"
+        >
+
         <label>Новый пароль</label>
-        <input type="password" id="password" name="password" placeholder="Оставьте пустым, чтобы не менять">
+        <input
+          type="password"
+          id="password"
+          name="password"
+          autocomplete="new-password"
+          minlength="12"
+          maxlength="64"
+          placeholder="Минимум 12 символов"
+        >
       </div>
 
       <div class="grid-inputs" style="grid-template-columns: 1fr; margin-bottom: 12px;">
@@ -344,6 +361,14 @@
           message.textContent = data.message || 'Успешно обновлено!';
           message.style.color = 'var(--success)';
           saveButton.disabled = true;
+
+          if (data.session_invalidated) {
+            setTimeout(() => {
+              window.location.replace('/auth/login');
+            }, 1200);
+
+            return;
+          }
 
           const usernameInput = document.getElementById('username');
           const displayUsername = document.getElementById('display-username');

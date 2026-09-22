@@ -1,11 +1,9 @@
 from types import SimpleNamespace
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 import routers.auth as auth
-import schemas
 from database import get_db
 from services.login_security_service import (
     LoginBlock,

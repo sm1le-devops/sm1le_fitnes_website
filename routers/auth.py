@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 import models
 import schemas
 
+from core.config import settings
 from core.security import (
     generate_csrf_token,
     get_password_hash,
@@ -55,9 +56,10 @@ from services.registration_security_service import (
     issue_verification_token,
 )
 from services.session_service import (
-    SESSION_TTL_SECONDS,
+    SESSION_COOKIE_MAX_AGE,
     create_session,
     delete_session,
+    delete_user_session,
 )
 
 router = APIRouter()
@@ -91,8 +93,6 @@ def raise_registration_blocked(
 def verification_link(
     token: str,
 ) -> str:
-    from core.config import settings
-
     current_domain = (
         settings.render_external_url
         or settings.your_domain
@@ -132,6 +132,20 @@ def get_client_ip(
         return "unknown"
 
     return request.client.host or "unknown"
+
+
+def use_secure_cookie(
+    request: Request,
+) -> bool:
+    if request.url.scheme == "https":
+        return True
+
+    return (
+        settings.render_external_url
+        .strip()
+        .lower()
+        .startswith("https://")
+    )
 
 
 def raise_login_blocked(
@@ -528,9 +542,9 @@ async def login(
         key="session_id",
         value=session_id,
         httponly=True,
-        secure=True,
+        secure=use_secure_cookie(request),
         samesite="Lax",
-        max_age=SESSION_TTL_SECONDS,
+        max_age=SESSION_COOKIE_MAX_AGE,
         path="/",
     )
 
@@ -540,7 +554,7 @@ async def login(
         key="csrf_token",
         value=csrf_token,
         httponly=False,
-        secure=True,
+        secure=use_secure_cookie(request),
         samesite="Lax",
         path="/",
     )
@@ -570,7 +584,7 @@ async def get_login(
         key="csrf_token",
         value=csrf_token,
         httponly=False,
-        secure=True,
+        secure=use_secure_cookie(request),
         samesite="Lax",
         path="/",
     )
@@ -600,7 +614,7 @@ async def get_register(
         key="csrf_token",
         value=csrf_token,
         httponly=False,
-        secure=True,
+        secure=use_secure_cookie(request),
         samesite="Lax",
         path="/",
     )
@@ -645,10 +659,7 @@ async def get_profile_page(
         key="csrf_token",
         value=csrf_token,
         httponly=False,
-        secure=(
-            request.url.scheme
-            == "https"
-        ),
+        secure=use_secure_cookie(request),
         samesite="Lax",
         path="/",
     )
@@ -659,10 +670,14 @@ async def get_profile_page(
 @router.post("/profile")
 async def update_profile(
     request: Request,
+    background_tasks: BackgroundTasks,
     username: Optional[str] = Form(
         None
     ),
     email: Optional[str] = Form(
+        None
+    ),
+    current_password: Optional[str] = Form(
         None
     ),
     password: Optional[str] = Form(
@@ -692,6 +707,44 @@ async def update_profile(
             "csrf_token"
         ),
     )
+
+    normalized_email = None
+
+    if email:
+        normalized_email = (
+            email.strip().lower()
+        )
+
+    email_changed = bool(
+        normalized_email
+        and normalized_email
+        != current_user.email.lower()
+    )
+
+    password_changed = bool(
+        password
+    )
+
+    sensitive_change = (
+        email_changed
+        or password_changed
+    )
+
+    if sensitive_change:
+        if (
+            not current_password
+            or not verify_password(
+                current_password,
+                current_user.hashed_password,
+            )
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Для изменения email или пароля "
+                    "укажите текущий пароль"
+                ),
+            )
 
     if (
         username
@@ -723,23 +776,19 @@ async def update_profile(
         if username_exists:
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    "Логин уже занят"
-                ),
+                detail="Логин уже занят",
             )
 
         current_user.username = username
 
-    if (
-        email
-        and email
-        != current_user.email
-    ):
+    if email_changed:
         email_exists = (
             db.query(models.User)
             .filter(
-                models.User.email
-                == email,
+                func.lower(
+                    models.User.email
+                )
+                == normalized_email,
                 models.User.id
                 != current_user.id,
             )
@@ -749,14 +798,32 @@ async def update_profile(
         if email_exists:
             raise HTTPException(
                 status_code=400,
+                detail="Email уже занят",
+            )
+
+        current_user.email = (
+            normalized_email
+        )
+        current_user.email_verified = False
+
+    if password_changed:
+        if len(password) < 12:
+            raise HTTPException(
+                status_code=400,
                 detail=(
-                    "Email уже занят"
+                    "Новый пароль должен содержать "
+                    "минимум 12 символов"
                 ),
             )
 
-        current_user.email = email
+        if len(password) > 64:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Новый пароль слишком длинный"
+                ),
+            )
 
-    if password:
         current_user.hashed_password = (
             get_password_hash(
                 password
@@ -788,8 +855,57 @@ async def update_profile(
             ),
         )
 
+    verification_required = False
+
+    if email_changed:
+        token = await issue_verification_token(
+            redis=request.app.state.redis,
+            user_id=current_user.id,
+            enforce_cooldown=False,
+        )
+
+        if token:
+            background_tasks.add_task(
+                send_verification_email,
+                current_user.email,
+                verification_link(token),
+            )
+
+        verification_required = True
+
+    if sensitive_change:
+        await delete_user_session(
+            request.app.state.redis,
+            current_user.id,
+        )
+
+        response = JSONResponse(
+            {
+                "message": (
+                    "Данные сохранены. "
+                    "Войдите в аккаунт снова."
+                ),
+                "session_invalidated": True,
+                "verification_required": (
+                    verification_required
+                ),
+            }
+        )
+
+        response.delete_cookie(
+            "session_id",
+            path="/",
+        )
+        response.delete_cookie(
+            "csrf_token",
+            path="/",
+        )
+
+        return response
+
     return {
-        "message": "Данные сохранены"
+        "message": "Данные сохранены",
+        "session_invalidated": False,
     }
 
 

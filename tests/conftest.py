@@ -1,8 +1,8 @@
 import asyncio
 import os
-from pathlib import Path
-
+from fastapi_limiter.depends import RateLimiter
 import pytest
+from fastapi import Request, Response
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
@@ -43,6 +43,8 @@ engine = create_engine(
     future=True,
 )
 
+
+        
 @event.listens_for(engine, "connect")
 def enable_sqlite_foreign_keys(dbapi_connection, _):
     cursor = dbapi_connection.cursor()
@@ -104,7 +106,20 @@ class FakeRedis:
         self.data.clear()
         return True
 
+@pytest.fixture(autouse=True)
+def bypass_rate_limiter(monkeypatch):
+    async def allow_request(
+        self,
+        request: Request,
+        response: Response,
+    ) -> None:
+        return None
 
+    monkeypatch.setattr(
+        RateLimiter,
+        "__call__",
+        allow_request,
+    )
 @pytest.fixture(autouse=True)
 def fresh_database():
     Base.metadata.drop_all(bind=engine)
@@ -130,25 +145,7 @@ def fake_redis():
     return FakeRedis()
 
 
-async def allow_rate_limit():
-    return None
 
-
-def install_rate_limit_overrides():
-    """
-    /auth/forgot-password использует RateLimiter как dependency.
-    В unit/integration тестах реальный Redis rate-limit нам не нужен.
-    """
-    for route in app.routes:
-        dependant = getattr(route, "dependant", None)
-        if dependant is None:
-            continue
-
-        for dependency in dependant.dependencies:
-            call = dependency.call
-
-            if call.__class__.__name__ == "RateLimiter":
-                app.dependency_overrides[call] = allow_rate_limit
 
 
 @pytest.fixture
@@ -164,7 +161,7 @@ def client(fake_redis):
             session.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    install_rate_limit_overrides()
+    
 
     test_client = TestClient(
         app,

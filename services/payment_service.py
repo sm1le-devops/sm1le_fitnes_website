@@ -76,11 +76,14 @@ def save_paid_purchase(
                 "Stripe session is already linked to another purchase"
             )
 
-        existing_session_purchase.status = "paid"
-        existing_session_purchase.amount_cents = amount_cents
-        existing_session_purchase.currency = (
-            currency.lower() if currency else None
+        existing_session_purchase.status = "paid"  # type: ignore[assignment]
+        existing_session_purchase.amount_cents = amount_cents  # type: ignore[assignment]
+        normalized_currency = (
+            currency.lower()
+            if currency
+            else None
         )
+        existing_session_purchase.currency = normalized_currency  # type: ignore[assignment]
         return existing_session_purchase
 
     purchase = get_purchase(
@@ -96,12 +99,15 @@ def save_paid_purchase(
         )
         db.add(purchase)
 
-    purchase.stripe_session_id = stripe_session_id
-    purchase.status = "paid"
-    purchase.amount_cents = amount_cents
-    purchase.currency = (
-        currency.lower() if currency else None
+    purchase.stripe_session_id = stripe_session_id  # type: ignore[assignment]
+    purchase.status = "paid"  # type: ignore[assignment]
+    purchase.amount_cents = amount_cents  # type: ignore[assignment]
+    normalized_currency = (
+        currency.lower()
+        if currency
+        else None
     )
+    purchase.currency = normalized_currency  # type: ignore[assignment]
 
     return purchase
 
