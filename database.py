@@ -1,25 +1,25 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    raise ValueError("❌ Environment variable DATABASE_URL not found. Check the .env file.")
+from core.config import settings
 
 engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,      # Проверяет соединение перед использованием
-    pool_recycle=3600,       # Перезапускает соединение каждые 60 мин
-    echo=False,              # Включить True для логов SQL-запросов
-    future=True              # Поддержка SQLAlchemy 2.x
+    settings.database_url,
+    pool_pre_ping=True,
+    pool_recycle=3600,
+    echo=False,
+    future=True,
 )
 
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
+SessionLocal = sessionmaker(
+    bind=engine,
+    autocommit=False,
+    autoflush=False,
+    future=True,
+)
+
 Base = declarative_base()
+
 
 def get_db():
     db = SessionLocal()

@@ -188,7 +188,7 @@
         {% else %}
         <button id="checkout-button" class="buy-button">
             <span>Начать программу</span>
-            <span class="price-label">{{ plan.price }} $</span>
+            <span class="price-label">{{ plan.price }} ₽</span>
         </button>
         {% endif %}
     </div>
@@ -205,7 +205,22 @@
                 checkoutButton.innerText = 'Загрузка...';
                 checkoutButton.disabled = true;
                 try {
-                    const response = await fetch('/create-checkout-session/{{ plan_id }}', { method: 'POST' });
+                    const csrfToken = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('csrf_token='))
+                    ?.split('=')[1];
+
+                const response = await fetch(
+                    '/create-checkout-session/{{ plan_id }}',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-Token': decodeURIComponent(
+                                csrfToken || ''
+                            )
+                        }
+                    }
+                );
                     if (response.status === 401) {
                         window.location.href = '/auth/login';
                         return;

@@ -1,141 +1,285 @@
-# password_reset.py
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Request
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from jose import jwt, JWTError, ExpiredSignatureError
-from datetime import datetime, timedelta
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
-from database import get_db
-import models
-from passlib.context import CryptContext
-from fastapi.templating import Jinja2Templates
+from hashlib import sha256
+from secrets import token_urlsafe
+from typing import Optional
+
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Request,
+)
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from fastapi_limiter.depends import RateLimiter
-import time
-import os
+from fastapi_mail import (
+    ConnectionConfig,
+    FastMail,
+    MessageSchema,
+)
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+import models
+import schemas
+
+from core.config import settings
+from core.security import get_password_hash
+from database import get_db
+from services.session_service import delete_user_session
+
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "supersecretkey")
-ALGORITHM = "HS256"
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+RESET_TOKEN_TTL = 60 * 60
+RESET_COOLDOWN_TTL = 60 * 10
 
-# --- Pydantic модели ---
-class ForgotPasswordRequest(BaseModel):
-    email: str
 
-class ResetPasswordRequest(BaseModel):
-    token: str
-    new_password: str
-
-# --- Конфиг для почты ---
 conf = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("MAIL_USER"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-    MAIL_FROM=os.getenv("MAIL_FROM"),
-    MAIL_PORT=587,
-    MAIL_SERVER="smtp.gmail.com",
+    MAIL_USERNAME=settings.mail_user,
+    MAIL_PASSWORD=settings.mail_password,
+    MAIL_FROM=settings.mail_from,
+    MAIL_PORT=settings.mail_port,
+    MAIL_SERVER=settings.mail_server,
     MAIL_STARTTLS=True,
     MAIL_SSL_TLS=False,
-    USE_CREDENTIALS=True
+    USE_CREDENTIALS=True,
 )
 
-# --- Хэширование пароля ---
-def hash_password(password: str):
-    return pwd_context.hash(password)
 
-# --- HTML формы ---
-@router.get("/forgot-password", response_class=HTMLResponse)
-async def forgot_password_form(request: Request):
-    return templates.TemplateResponse("forgot_password.html", {"request": request})
+def token_hash(token: str) -> str:
+    return sha256(
+        token.encode("utf-8")
+    ).hexdigest()
 
-from typing import Optional
 
-@router.get("/reset-password", response_class=HTMLResponse)
-async def reset_password_form(request: Request, token: Optional[str] = None):
+def reset_token_key(token: str) -> str:
+    return (
+        "password_reset:token:"
+        f"{token_hash(token)}"
+    )
+
+
+def user_reset_key(user_id: int) -> str:
+    return f"password_reset:user:{user_id}"
+
+
+def reset_cooldown_key(user_id: int) -> str:
+    return f"password_reset:cooldown:{user_id}"
+
+
+@router.get(
+    "/forgot-password",
+    response_class=HTMLResponse,
+)
+async def forgot_password_form(
+    request: Request,
+):
+    return templates.TemplateResponse(
+        request,
+        "forgot_password.html",
+        {"request": request},
+    )
+
+
+@router.get(
+    "/reset-password",
+    response_class=HTMLResponse,
+)
+async def reset_password_form(
+    request: Request,
+    token: Optional[str] = None,
+):
     if not token:
         return templates.TemplateResponse(
+            request,
             "reset_password.html",
-            {"request": request, "error": "Token is missing"}
+            {
+                "request": request,
+                "error": "Token is missing",
+            },
         )
 
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except ExpiredSignatureError:
+    user_id = await request.app.state.redis.get(
+        reset_token_key(token)
+    )
+
+    if user_id is None:
         return templates.TemplateResponse(
+            request,
             "reset_password.html",
-            {"request": request, "error": "Token has expired"}
-        )
-    except JWTError:
-        return templates.TemplateResponse(
-            "reset_password.html",
-            {"request": request, "error": "Token is invalid"}
+            {
+                "request": request,
+                "error": "Token is invalid or expired",
+            },
         )
 
-    return templates.TemplateResponse("reset_password.html", {"request": request, "token": token})
+    return templates.TemplateResponse(
+        request,
+        "reset_password.html",
+        {
+            "request": request,
+            "token": token,
+        },
+    )
 
 
-# --- API ---
 @router.post(
     "/forgot-password",
-    dependencies=[Depends(RateLimiter(times=3, seconds=3600))]  # до 3 запросов в час с одного IP
+    dependencies=[
+        Depends(
+            RateLimiter(
+                times=3,
+                seconds=3600,
+            )
+        )
+    ],
 )
 async def forgot_password(
-    request_data: ForgotPasswordRequest,
+    request: Request,
+    request_data: schemas.ForgotPasswordRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    email = request_data.email.strip().lower()
-    now = int(time.time())
+    email = str(
+        request_data.email
+    ).strip().lower()
 
-    user = db.query(models.User).filter(models.User.email == email).first()
-
-    # Даже если пользователя нет — не раскрываем
-    if not user:
-        return {"message": "If an account with this email exists, a recovery link has been sent to it"}
-
-    # Антиспам: не чаще 10 минут
-    if getattr(user, "last_reset_request", None) and now - int(user.last_reset_request) < 600:
-        raise HTTPException(status_code=429, detail="Too many requests. Please try again later.")
-
-    # Генерация токена
-    token = jwt.encode(
-        {"sub": user.email, "exp": datetime.utcnow() + timedelta(hours=1)},
-        SECRET_KEY,
-        algorithm=ALGORITHM
+    user = (
+        db.query(models.User)
+        .filter(
+            func.lower(models.User.email) == email
+        )
+        .first()
     )
-    reset_link = f"{os.getenv("RENDER_EXTERNAL_URL") or os.getenv("YOUR_DOMAIN") or "http://localhost:8000"}/auth/reset-password?token={token}"
+
+    generic_response = {
+        "message": (
+            "If an account with this email exists, "
+            "a recovery link has been sent to it"
+        )
+    }
+
+    if not user:
+        return generic_response
+
+    redis = request.app.state.redis
+
+    cooldown_created = await redis.set(
+        reset_cooldown_key(user.id),
+        "1",
+        ex=RESET_COOLDOWN_TTL,
+        nx=True,
+    )
+
+    if not cooldown_created:
+        return generic_response
+
+    old_token_hash = await redis.get(
+        user_reset_key(user.id)
+    )
+
+    if old_token_hash:
+        await redis.delete(
+            f"password_reset:token:{old_token_hash}"
+        )
+
+    token = token_urlsafe(32)
+    hashed_token = token_hash(token)
+
+    await redis.set(
+        reset_token_key(token),
+        user.id,
+        ex=RESET_TOKEN_TTL,
+    )
+
+    await redis.set(
+        user_reset_key(user.id),
+        hashed_token,
+        ex=RESET_TOKEN_TTL,
+    )
+
+    current_domain = (
+        settings.render_external_url
+        or settings.your_domain
+    ).rstrip("/")
+
+    reset_link = (
+        f"{current_domain}"
+        f"/auth/reset-password?token={token}"
+    )
 
     message = MessageSchema(
         subject="Password recovery",
         recipients=[user.email],
-        body=f"To reset your password, follow this link:\n{reset_link}",
-        subtype="plain"
+        body=(
+            "To reset your password, "
+            "follow this link:\n"
+            f"{reset_link}"
+        ),
+        subtype="plain",
     )
-    fm = FastMail(conf)
-    background_tasks.add_task(fm.send_message, message)
 
-    # Сохраняем время последнего запроса
-    user.last_reset_request = now
-    db.commit()
+    background_tasks.add_task(
+        FastMail(conf).send_message,
+        message,
+    )
 
-    return {"message": "If an account with this email exists, a recovery link has been sent to it"}
+    return generic_response
+
 
 @router.post("/reset-password")
-async def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+async def reset_password(
+    request: Request,
+    data: schemas.ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    redis = request.app.state.redis
+    key = reset_token_key(data.token)
+
+    user_id = await redis.getdel(key)
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Token is invalid or expired",
+        )
+
     try:
-        payload = jwt.decode(data.token, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-    except ExpiredSignatureError:
-        raise HTTPException(status_code=400, detail="Token has expired")
-    except JWTError:
-        raise HTTPException(status_code=400, detail="Token is invalid")
+        user_id = int(user_id)
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=400,
+            detail="Token is invalid",
+        )
 
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.get(
+        models.User,
+        user_id,
+    )
+
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
 
-    user.hashed_password = hash_password(data.new_password)
+    user.hashed_password = get_password_hash(
+        data.new_password
+    )
+
     db.commit()
-    return {"message": "Password changed successfully"}
+
+    await redis.delete(
+        user_reset_key(user.id)
+    )
+
+    await delete_user_session(
+        redis,
+        user.id,
+    )
+
+    return {
+        "message": "Password changed successfully"
+    }

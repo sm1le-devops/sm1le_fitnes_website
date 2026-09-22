@@ -228,7 +228,7 @@
             <div class="buy-card">
                 <h2>Полный доступ</h2>
                 <p>Открой все тренировки программы навсегда, видео-инструкции и план питания.</p>
-                <div class="price-tag">{{ plan.price }} $</div>
+                <div class="price-tag">{{ plan.price }} ₽</div>
                 <button id="stripe-button" class="day-btn active" style="width: 100%; padding: 16px; font-size: 1rem;">
                     КУПИТЬ КУРС
                 </button>
@@ -253,7 +253,7 @@
         <div class="day-selector" id="daySelector">
             {% if plan and plan.days %}
             {% for day in plan.days %}
-            <button class="day-btn {% if loop.first %}active{% endif %}" onclick="showDay({{ loop.index0 }})">
+            <button class="day-btn{% if loop.first %} active{% endif %}" data-day-index="{{ loop.index0 }}">
                 День {{ loop.index }}
             </button>
             {% endfor %}
@@ -285,21 +285,54 @@
 
         // --- 2. ЛОГИКА ПОКУПКИ (STRIPE) ---
         const stripeBtn = document.getElementById('stripe-button');
+
         if (stripeBtn) {
             const stripe = Stripe('{{ stripe_publishable_key }}');
+
             stripeBtn.addEventListener('click', async () => {
                 stripeBtn.innerText = 'Загрузка...';
                 stripeBtn.disabled = true;
+
                 try {
-                    const response = await fetch('/create-checkout-session/{{ plan_id }}', { method: 'POST' });
-                    const session = await response.json();
-                    if (session.id) {
-                        await stripe.redirectToCheckout({ sessionId: session.id });
-                    } else {
-                        alert('Ошибка: ' + (session.detail || 'Не удалось создать сессию'));
+                    const csrfToken = document.cookie
+                        .split('; ')
+                        .find(row => row.startsWith('csrf_token='))
+                        ?.split('=')[1];
+
+                    const response = await fetch(
+                        '/create-checkout-session/{{ plan_id }}',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-Token': decodeURIComponent(
+                                    csrfToken || ''
+                                )
+                            }
+                        }
+                    );
+
+                    if (response.status === 401) {
+                        window.location.href = '/auth/login';
+                        return;
                     }
+
+                    const session = await response.json();
+
+                    if (session.id) {
+                        await stripe.redirectToCheckout({
+                            sessionId: session.id
+                        });
+                        return;
+                    }
+
+                    alert(
+                        'Ошибка: ' +
+                        (session.detail || 'Не удалось создать оплату')
+                    );
+
                 } catch (e) {
                     alert('Ошибка связи с сервером');
+
                 } finally {
                     stripeBtn.innerText = 'КУПИТЬ КУРС';
                     stripeBtn.disabled = false;

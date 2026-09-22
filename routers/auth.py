@@ -1,207 +1,387 @@
-import sys
-import os, re
-import json
+from secrets import compare_digest
 from typing import Optional
-from datetime import datetime
-
-from fastapi import APIRouter, Depends, HTTPException, Request, Cookie, Form
-from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from passlib.context import CryptContext
-from itsdangerous import URLSafeTimedSerializer
-from dotenv import load_dotenv
+from sqlalchemy.exc import IntegrityError
 
-# Импорты твоих модулей
-import models, schemas
+import models
+import schemas
+
+from core.security import (
+    generate_csrf_token,
+    get_password_hash,
+    is_username_valid,
+    validate_csrf_token,
+    verify_password,
+)
 from database import get_db
+from dependencies import get_current_user_optional, require_current_user
+from services.session_service import (
+    SESSION_TTL_SECONDS,
+    create_session,
+    delete_session,
+)
 
-# --- Настройки ---
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-load_dotenv()
 
-# --- CSRF Защита ---
-def get_csrf_serializer():
-    # Используй переменную окружения или дефолтное значение
-    secret = os.getenv("CSRF_SECRET", "dev-secret-key-123")
-    return URLSafeTimedSerializer(secret)
 
-def generate_csrf_token():
-    return get_csrf_serializer().dumps("token")
+def check_csrf(
+    cookie_token: Optional[str],
+    form_token: Optional[str],
+) -> None:
+    if (
+        not cookie_token
+        or not form_token
+        or not compare_digest(cookie_token, form_token)
+        or not validate_csrf_token(form_token)
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Ошибка безопасности (CSRF)",
+        )
 
-# ТА САМАЯ ФУНКЦИЯ, КОТОРОЙ НЕ ХВАТАЛО
-def validate_csrf_token(token: str):
-    serializer = get_csrf_serializer()
-    try:
-        # Проверяем токен. Если он валиден и не просрочен (1 час), вернет True
-        serializer.loads(token, max_age=3600)
-        return True
-    except Exception:
-        return False
-
-# --- Схемы данных ---
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-    csrf_token: str
-
-# --- Утилиты ---
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def is_username_valid(username: str) -> bool:
-    return bool(re.match(r'^[a-zA-Z0-9_]+$', username))
-
-# --- API Эндпоинты ---
 
 @router.post("/register")
-def register(user: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
-    # 1. ПРОВЕРКА CSRF ТОКЕНА
-    cookie_csrf = request.cookies.get("csrf_token")
-    if not cookie_csrf or not validate_csrf_token(user.csrf_token):
-        raise HTTPException(status_code=403, detail="Ошибка безопасности (CSRF)")
+def register(
+    user: schemas.UserCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    check_csrf(
+        request.cookies.get("csrf_token"),
+        user.csrf_token,
+    )
 
-    # 2. ПРОВЕРКА ВАЛИДНОСТИ ИМЕНИ
     if not is_username_valid(user.username):
-        raise HTTPException(status_code=400, detail="Имя может содержать только буквы, цифры и '_'")
+        raise HTTPException(
+            status_code=400,
+            detail="Имя может содержать только буквы, цифры и '_'",
+        )
 
-    # 3. ПРОВЕРКА ДУБЛИКАТОВ
-    db_user = db.query(models.User).filter(
-        (models.User.username == user.username) | (models.User.email == user.email)
-    ).first()
-    
-    if db_user:
-        raise HTTPException(status_code=400, detail="Логин или Email уже заняты")
+    existing_user = (
+        db.query(models.User)
+        .filter(
+            (models.User.username == user.username)
+            | (models.User.email == user.email)
+        )
+        .first()
+    )
 
-    # 4. СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Логин или Email уже заняты",
+        )
+
     new_user = models.User(
         username=user.username,
         email=user.email,
         hashed_password=get_password_hash(user.password),
-        purchased_plans="" 
     )
+
+    new_user.profile = models.UserProfile()
+
     db.add(new_user)
-    db.commit()
+
+    try:
+        db.commit()
+
+    except IntegrityError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=409,
+            detail="Логин или Email уже заняты",
+        )
+
     return {"message": "Success"}
 
+
 @router.post("/login")
-async def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    # Проверка CSRF
-    cookie_csrf = request.cookies.get("csrf_token")
-    if not cookie_csrf or not validate_csrf_token(data.csrf_token):
-         raise HTTPException(status_code=403, detail="Ошибка безопасности (CSRF)")
-
-    db_user = db.query(models.User).filter(models.User.username == data.username).first()
-    if not db_user or not verify_password(data.password, db_user.hashed_password):
-        raise HTTPException(status_code=401, detail="Неверный логин или пароль")
-
-    response = JSONResponse(content={"redirect_url": "/auth/welcome"})
-    
-    # КУКА ТЕПЕРЬ СТРОГО НАСТРОЕНА ДЛЯ HTTPS    
-    response.set_cookie(
-        key="username", 
-        value=db_user.username, 
-        httponly=True,   # Защищаем от XSS
-        secure=True,     # ОБЯЗАТЕЛЬНО для Render (HTTPS)
-        samesite="Lax",  # Позволяет куке передаваться при навигации
-        path="/", 
-        max_age=86400
+async def login(
+    data: schemas.UserLogin,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    check_csrf(
+        request.cookies.get("csrf_token"),
+        data.csrf_token,
     )
-    
-    response.set_cookie(
-        key="csrf_token", 
-        value=generate_csrf_token(), 
-        httponly=False,  # JS должен видеть токен для форм
-        secure=True, 
-        samesite="Lax", 
-        path="/"
+
+    db_user = (
+        db.query(models.User)
+        .filter(models.User.username == data.username)
+        .first()
     )
+
+    if not db_user or not verify_password(
+        data.password,
+        db_user.hashed_password,
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Неверный логин или пароль",
+        )
+
+    if not db_user.is_active:
+        raise HTTPException(
+            status_code=403,
+            detail="Аккаунт отключён",
+        )
+        
+    old_session_id = request.cookies.get("session_id")
+
+    if old_session_id:
+        await delete_session(
+            request.app.state.redis,
+            old_session_id,
+        )
+
+    session_id = await create_session(
+        request.app.state.redis,
+        db_user.id,
+    )
+
+    response = JSONResponse(
+        {"redirect_url": "/auth/welcome"}
+    )
+
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        httponly=True,
+        secure=True,
+        samesite="Lax",
+        max_age=SESSION_TTL_SECONDS,
+        path="/",
+    )
+
+    csrf_token = generate_csrf_token()
+
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        secure=True,
+        samesite="Lax",
+        path="/",
+    )
+
     return response
 
-# --- Страницы (HTML) ---
 
 @router.get("/login", response_class=HTMLResponse)
 async def get_login(request: Request):
     csrf_token = generate_csrf_token()
-    response = templates.TemplateResponse("login.html", {"request": request, "csrf_token": csrf_token})
-    response.set_cookie("csrf_token", csrf_token, httponly=False, secure=True, samesite="lax", path="/")
+
+    response = templates.TemplateResponse(
+        request,
+        "login.html",
+        {
+            "request": request,
+            "csrf_token": csrf_token,
+        },
+    )
+
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        secure=True,
+        samesite="Lax",
+        path="/",
+    )
+
     return response
+
 
 @router.get("/register", response_class=HTMLResponse)
 async def get_register(request: Request):
-    # Генерируем токен безопасности
     csrf_token = generate_csrf_token()
-    
-    # Отдаем страницу и передаем токен внутрь HTML
-    response = templates.TemplateResponse("register.html", {
-        "request": request, 
-        "csrf_token": csrf_token
-    })
-    
-    # Сохраняем токен в куки браузера для последующей проверки
-    response.set_cookie(
-        "csrf_token", 
-        csrf_token, 
-        httponly=False, 
-        secure=True, 
-        samesite="lax", 
-        path="/"
+
+    response = templates.TemplateResponse(
+        request,
+        "register.html",
+        {
+            "request": request,
+            "csrf_token": csrf_token,
+        },
     )
+
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        secure=True,
+        samesite="Lax",
+        path="/",
+    )
+
     return response
 
 
 @router.get("/profile", response_class=HTMLResponse)
-async def get_profile_page(request: Request, db: Session = Depends(get_db), username: Optional[str] = Cookie(None)):
-    if not username: 
-        return RedirectResponse(url="/auth/login", status_code=303)
-    user = db.query(models.User).filter(models.User.username == username).first()
-    return templates.TemplateResponse("profile.html", {"request": request, "user": user})
+async def get_profile_page(
+    request: Request,
+    current_user: Optional[models.User] = Depends(
+        get_current_user_optional
+    ),
+):
+    if current_user is None:
+        return RedirectResponse(
+            url="/auth/login",
+            status_code=303,
+        )
+
+    csrf_token = generate_csrf_token()
+
+    response = templates.TemplateResponse(
+        request,
+        "profile.html",
+        {
+            "request": request,
+            "user": current_user,
+            "profile": current_user.profile,
+            "csrf_token": csrf_token,
+        },
+    )
+
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        secure=request.url.scheme == "https",
+        samesite="Lax",
+        path="/",
+    )
+
+    return response
+
 
 @router.post("/profile")
 async def update_profile(
     request: Request,
     username: Optional[str] = Form(None),
     email: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
     gender: Optional[str] = Form(None),
     weight: Optional[float] = Form(None),
     height: Optional[float] = Form(None),
     db: Session = Depends(get_db),
-    current_username: str = Cookie(..., alias="username")
+    current_user: models.User = Depends(require_current_user),
 ):
-    # Валидация CSRF
     form_data = await request.form()
-    csrf_from_form = form_data.get("csrf_token")
-    if not validate_csrf_token(csrf_from_form):
-        raise HTTPException(status_code=403, detail="CSRF invalid")
 
-    user = db.query(models.User).filter(models.User.username == current_username).first()
-    
-    if username and username != current_username:
-        if db.query(models.User).filter(models.User.username == username).first():
-            raise HTTPException(status_code=400, detail="Логин занят")
-        user.username = username
-    
-    if email: user.email = email
-    if gender: user.gender = gender
-    if weight: user.weight = weight
-    if height: user.height = height
+    check_csrf(
+        request.cookies.get("csrf_token"),
+        form_data.get("csrf_token"),
+    )
 
-    db.commit()
-    
-    response = JSONResponse(content={"message": "Данные сохранены"})
-    if username and username != current_username:
-        response.set_cookie(key="username", value=username, path="/", httponly=False, secure=True)
-    return response
+    if username and username != current_user.username:
+        if not is_username_valid(username):
+            raise HTTPException(
+                status_code=400,
+                detail="Некорректное имя пользователя",
+            )
+
+        username_exists = (
+            db.query(models.User)
+            .filter(
+                models.User.username == username,
+                models.User.id != current_user.id,
+            )
+            .first()
+        )
+
+        if username_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Логин уже занят",
+            )
+
+        current_user.username = username
+
+    if email and email != current_user.email:
+        email_exists = (
+            db.query(models.User)
+            .filter(
+                models.User.email == email,
+                models.User.id != current_user.id,
+            )
+            .first()
+        )
+
+        if email_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Email уже занят",
+            )
+
+        current_user.email = email
+
+    if password:
+        current_user.hashed_password = get_password_hash(
+            password
+        )
+
+    profile = current_user.profile
+
+    if profile is None:
+        profile = models.UserProfile(
+            user_id=current_user.id
+        )
+        db.add(profile)
+
+    profile.gender = gender or None
+    profile.weight = weight
+    profile.height = height
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=409,
+            detail="Логин или Email уже заняты",
+        )
+
+    return {"message": "Данные сохранены"}
+
 
 @router.post("/logout")
-async def logout():
-    response = RedirectResponse(url="/", status_code=303)
-    response.delete_cookie("username", path="/")
-    response.delete_cookie("csrf_token", path="/")
+async def logout(
+    request: Request,
+    csrf_token: str = Form(...),
+    session_id: Optional[str] = Cookie(None),
+):
+    check_csrf(
+        request.cookies.get("csrf_token"),
+        csrf_token,
+    )
+
+    if session_id:
+        await delete_session(
+            request.app.state.redis,
+            session_id,
+        )
+
+    response = RedirectResponse(
+        url="/",
+        status_code=303,
+    )
+
+    response.delete_cookie(
+        "session_id",
+        path="/",
+    )
+
+    response.delete_cookie(
+        "csrf_token",
+        path="/",
+    )
+
     return response

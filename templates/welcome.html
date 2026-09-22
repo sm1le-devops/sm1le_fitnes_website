@@ -201,13 +201,7 @@
 
     <div class="plans-list">
       {% for plan_id, plan in plans.items() %}
-      {# Универсальная проверка: работает и со списком, и со строкой #}
-      {% set is_bought = false %}
-      {% if user and user.purchased_plans %}
-      {% if plan_id in user.purchased_plans %}
-      {% set is_bought = true %}
-      {% endif %}
-      {% endif %}
+      {% set is_bought = plan_id in purchased_plan_ids %}
 
       <div class="plan-card">
         <span class="plan-title">{{ plan.title }}</span>
@@ -218,7 +212,7 @@
             {% if is_bought %}
             <span style="color: var(--success); font-size: 14px;">✓ Куплено</span>
             {% else %}
-            {{ plan.price }} $
+            {{ plan.price }} ₽
             {% endif %}
           </div>
 
