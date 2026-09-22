@@ -117,9 +117,9 @@ jobs:
             .
 
   deploy:
-    name: Deploy to Render
+    name: Deploy and verify production
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     needs:
       - quality
       - docker
@@ -128,8 +128,11 @@ jobs:
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
 
+    env:
+      PRODUCTION_URL: https://sm1le-fitnes-website-pojo.onrender.com
+
     steps:
-      - name: Trigger Render deploy
+      - name: Trigger exact commit on Render
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
@@ -138,11 +141,77 @@ jobs:
             exit 1
           fi
 
+          DEPLOY_URL="$RENDER_DEPLOY_HOOK_URL"
+
+          if [[ "$DEPLOY_URL" == *"?"* ]]; then
+            DEPLOY_URL="${DEPLOY_URL}&ref=${GITHUB_SHA}"
+          else
+            DEPLOY_URL="${DEPLOY_URL}?ref=${GITHUB_SHA}"
+          fi
+
           curl \
             --fail-with-body \
             --silent \
             --show-error \
             --request POST \
-            "$RENDER_DEPLOY_HOOK_URL"
+            "$DEPLOY_URL"
 
-          echo "Render deployment triggered successfully"
+          echo
+          echo "Render deploy triggered for commit ${GITHUB_SHA}"
+
+      - name: Wait for exact production release
+        run: |
+          echo "Waiting for production commit ${GITHUB_SHA}"
+
+          for attempt in $(seq 1 60); do
+            HTTP_CODE=$(curl \
+              --silent \
+              --show-error \
+              --output /tmp/ready.json \
+              --write-out "%{http_code}" \
+              "${PRODUCTION_URL}/ready" \
+              || true)
+
+            echo "Attempt ${attempt}/60 - HTTP ${HTTP_CODE}"
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              if grep -Fq "${GITHUB_SHA}" /tmp/ready.json; then
+                echo "Correct commit is live and ready"
+                cat /tmp/ready.json
+                exit 0
+              fi
+            fi
+
+            sleep 10
+          done
+
+          echo "Production did not become ready with commit ${GITHUB_SHA}"
+          cat /tmp/ready.json || true
+          exit 1
+
+      - name: Production smoke tests
+        run: |
+          check_endpoint() {
+            PATH_TO_CHECK="$1"
+
+            STATUS=$(curl \
+              --silent \
+              --show-error \
+              --output /dev/null \
+              --write-out "%{http_code}" \
+              "${PRODUCTION_URL}${PATH_TO_CHECK}")
+
+            echo "${PATH_TO_CHECK} -> ${STATUS}"
+
+            if [ "$STATUS" != "200" ]; then
+              exit 1
+            fi
+          }
+
+          check_endpoint "/health"
+          check_endpoint "/ready"
+          check_endpoint "/"
+          check_endpoint "/auth/login"
+          check_endpoint "/auth/register"
+
+          echo "Production smoke tests passed"
