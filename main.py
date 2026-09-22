@@ -7,7 +7,9 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi_limiter import FastAPILimiter
 from redis.asyncio import Redis
-
+from core.request_logging import (
+    RequestLoggingMiddleware,
+)
 from core.config import settings
 from core.security_headers import (
     SecurityHeadersMiddleware,
@@ -117,6 +119,9 @@ app.add_middleware(
     SecurityHeadersMiddleware,
 )
 
+app.add_middleware(
+    RequestLoggingMiddleware,
+)
 
 app.mount(
     "/static",
