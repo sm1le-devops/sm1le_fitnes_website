@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/sm1le_ci
+  DATABASE_URL: postgresql+psycopg2://postgres@localhost:5432/sm1le_ci
   REDIS_URL: redis://localhost:6379/0
   CSRF_SECRET: ci-csrf-secret-not-for-production
   JWT_SECRET_KEY: ci-jwt-secret-not-for-production
@@ -34,8 +34,8 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: sm1le_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
