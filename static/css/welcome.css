@@ -166,6 +166,9 @@ button:hover { background-color: #7d2ca0; }
   backdrop-filter: blur(5px);
   transition: all 0.3s ease; /* плавное масштабирование */
 }
+.profile-top-right img.avatar-large:hover {
+  transform: scale(1.05);
+}
 .profile-top-right img.avatar-large {
   width: 100px;  /* увеличен размер */
   height: 100px; /* увеличен размер */
@@ -174,9 +177,7 @@ button:hover { background-color: #7d2ca0; }
   border: 3px solid white; /* увеличена граница */
   transition: transform 0.3s ease; /* плавная анимация */
 }
-.profile-top-right img.avatar-large:hover {
-  transform: scale(1.05);
-}
+
 .profile-top-right a {
   background-color: #9b59b6;
   color: white;

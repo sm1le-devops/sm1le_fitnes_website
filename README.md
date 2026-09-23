@@ -1,29 +1,111 @@
-🏋️‍♂️ Sm1le-Fitness | Fitness Ecosystem
-Sm1le-Fitness is a high-performance, scalable SaaS platform designed to deliver personalized fitness and nutrition guidance through a secure and robust digital experience.
+# sm1le.fitness
 
-🏗️ Architecture & Backend Expertise
-The platform is built with a focus on data integrity, scalability, and security, utilizing a modern Python-driven stack.
+**Production-hardened FastAPI platform for purchasing personalized fitness courses.**
 
-Secure Auth & Sessions: Engineered a multi-layered authentication system using bcrypt for password hashing and Secure/HttpOnly cookie-based sessions to prevent XSS and session hijacking.
+Users can register, complete their profile, choose a fitness goal, purchase a course through Stripe, and receive access to personalized training content. The backend is built around secure authentication, payment reliability, user-data isolation, Redis-backed state, observability, automated testing, and verified CI/CD.
 
-Stripe Payment Lifecycle: Implemented a full payment integration, managing Stripe checkout sessions and asynchronous webhooks to ensure real-time, automated access provisioning.
+**Live:** https://sm1le-fitnes-website-pojo.onrender.com
 
-Database Design: Architected a robust PostgreSQL relational schema to manage complex relationships between users, fitness metrics, and AI-generated content (utilizing JSON columns for flexible data storage).
+## Stack
 
-Recommendation Engine: Developed custom algorithms that process user-specific health data to generate tailored training and nutrition plans.
+**Python 3.12 · FastAPI · PostgreSQL · SQLAlchemy · Alembic · Redis · Docker · Stripe · GitHub Actions**
 
-Performance & Reliability: Built on FastAPI to ensure low-latency API response times, with Redis caching and FastAPI-Limiter to mitigate DDoS risks and manage high-concurrency traffic.
+## Verified Quality
 
-🚀 Technical Stack
-Backend & Data
-Language: Python 3.x
+```text
+Pytest                  128 passed
+Mypy                    0 issues / 20 source files
+Ruff                    All checks passed
+Dependency audit        0 known vulnerabilities
+Alembic drift check     Passed
+Docker production build Passed
+Production smoke tests  Passed
+```
 
-Framework: FastAPI (Asynchronous API design)
+## Key Engineering Features
 
-Database: PostgreSQL (Relational modeling & ORM via SQLAlchemy)
+### Security
+- bcrypt password hashing
+- Secure / HttpOnly cookie-based sessions
+- CSRF protection
+- email verification and password reset
+- RBAC and user-data isolation
+- brute-force / abuse rate limiting
+- CSP, HSTS, TrustedHost and restricted CORS
 
-Caching/Queues: Redis
+### Payments
+- Stripe Checkout
+- verified webhook processing
+- webhook idempotency to prevent duplicate processing
+- PostgreSQL-backed purchase state
 
-Security: bcrypt, itsdangerous, Stripe Webhooks
+### Reliability & Observability
+- Redis-backed sessions and security state
+- structured JSON request logging
+- unique `X-Request-ID` for production tracing
+- `/health` liveness endpoint
+- `/ready` readiness endpoint with real PostgreSQL + Redis checks
+- automatic Alembic migrations before application startup
 
-Infrastructure: Docker, Render (Deployment)
+## Architecture
+
+```text
+Client
+  ↓
+FastAPI
+  ├── Security middleware
+  ├── Request ID / structured logs
+  │
+  ├── PostgreSQL
+  │    └── SQLAlchemy + Alembic
+  │
+  ├── Redis
+  │    └── sessions / rate limits / verification state
+  │
+  └── Stripe
+       └── Checkout + idempotent webhooks
+```
+
+## CI/CD
+
+```text
+Git push
+   ↓
+Ruff + Mypy
+   ↓
+Alembic validation
+   ↓
+Pytest
+   ↓
+Dependency audit
+   ↓
+Docker build
+   ↓
+Render deploy
+   ↓
+Production migrations
+   ↓
+/ready: PostgreSQL + Redis
+   ↓
+Exact Git commit verification
+   ↓
+Smoke tests
+   ↓
+Deployment verified
+```
+
+The deployment is considered successful only when the **exact Git commit** sent by GitHub Actions is running in production and these endpoints return successfully:
+
+```text
+/health
+/ready
+/
+/auth/login
+/auth/register
+```
+
+## What This Project Demonstrates
+
+**Secure authentication, PostgreSQL design, Redis-backed state, Stripe payment consistency, webhook idempotency, production migrations, structured logging, request tracing, automated testing, Docker, and end-to-end CI/CD with real production verification.**
+
+**Status:** `v1.0` — production-ready portfolio release

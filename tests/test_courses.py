@@ -103,7 +103,7 @@ def test_course_guest_sees_paywall(
     )
 
     assert response.status_code == 200
-    assert "КУПИТЬ КУРС" in response.text
+    assert "BUY COURSE" in response.text
 
 
 def test_paid_course_without_generated_plan_redirects_questionnaire(

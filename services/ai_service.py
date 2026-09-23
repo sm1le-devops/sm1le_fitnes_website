@@ -36,16 +36,16 @@ def generate_training_plan(
 
         output.append(f"# {program_name}")
         output.append(
-            f"**Продолжительность:** "
+            f"**Duration:** "
             f"{data['program_meta']['duration']}"
         )
         output.append(
-            f"**Основной фокус:** "
+            f"**Primary Focus:** "
             f"{data['program_meta']['focus']}\n"
         )
 
         output.append(
-            "## 🍏 Базовые рекомендации по питанию"
+            "## 🍏 Basic Nutrition Guidelines"
         )
         output.append(
             f"> {data['modules']['nutrition_base']}\n"
@@ -53,8 +53,8 @@ def generate_training_plan(
 
         if height >= 185:
             output.append(
-                "## 📏 Рекомендации по биомеханике "
-                "(высокий рост)"
+                "## 📏 Biomechanics Recommendations "
+                "(tall users)"
             )
             output.append(
                 f"> {data['modules']['tall_person_advice']}\n"
@@ -72,17 +72,17 @@ def generate_training_plan(
 
         if has_shoulder_injury:
             output.append(
-                "## ⚠️ Особые указания по безопасности"
+                "Special Safety Guidelines"
             )
             output.append(
                 f"> {data['modules']['shoulder_injury_mod']}\n"
             )
 
-        output.append("# 🏋️ Программа тренировок")
+        output.append("# 🏋️ Training Program")
 
         for week in data["weeks"]:
             output.append(
-                f"## 📅 Неделя {week['week']}: "
+                f"## 📅 Week {week['week']}: "
                 f"{week['title']}"
             )
 
@@ -100,12 +100,19 @@ def generate_training_plan(
 
                     if (
                         has_shoulder_injury
-                        and "жим штанги" in name.lower()
+                        and any(
+                            phrase in name.lower()
+                            for phrase in (
+                                "жим штанги",
+                                "barbell press",
+                                "barbell bench press",
+                            )
+                        )
                     ):
                         name = (
-                            "Жим гантелей "
-                            "(нейтральный хват)"
-                        )
+                            "Dumbbell Press "
+                            "(neutral grip)"
+                    )
 
                     output.append(
                         f"* **{name}** — "
@@ -114,7 +121,7 @@ def generate_training_plan(
 
                 if "tips" in workout:
                     output.append(
-                        "\n**💡 Лайфхаки и советы дня:**"
+                        "\n**💡 Tips for the Day:**"
                     )
 
                     for tip in workout["tips"]:
@@ -125,13 +132,13 @@ def generate_training_plan(
         final_text = "\n\n".join(output)
 
         logging.info(
-            "План успешно собран конструктором"
+            "Training plan generated successfully"
         )
 
         return final_text
 
     except Exception:
         logging.exception(
-            "Ошибка при генерации тренировочного плана"
+            "Failed to generate training plan"
         )
         return None

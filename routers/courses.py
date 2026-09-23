@@ -56,7 +56,7 @@ def check_csrf(
     ):
         raise HTTPException(
             status_code=403,
-            detail="Ошибка безопасности (CSRF)",
+            detail="Security error (CSRF)",
         )
 
 
@@ -81,7 +81,7 @@ async def get_questionnaire(
     if plan_id not in PLANS:
         raise HTTPException(
             status_code=404,
-            detail="План не найден",
+            detail="Plan not found",
         )
 
     if not has_paid_purchase(
@@ -91,7 +91,7 @@ async def get_questionnaire(
     ):
         raise HTTPException(
             status_code=403,
-            detail="План не куплен",
+            detail="Plan has not been purchased",
         )
 
     csrf_token = generate_csrf_token()
@@ -133,7 +133,7 @@ def download_pdf(
     ):
         raise HTTPException(
             status_code=403,
-            detail="План не куплен",
+            detail="Plan has not been purchased",
         )
 
     generated_plan = get_generated_plan(
@@ -145,7 +145,7 @@ def download_pdf(
     if not generated_plan:
         raise HTTPException(
             status_code=404,
-            detail="Текст плана не найден",
+            detail="Generated plan content not found",
         )
 
     pdf_bytes = create_pdf_buffer(
@@ -181,7 +181,7 @@ async def view_course(
     if not plan:
         raise HTTPException(
             status_code=404,
-            detail="Программа не найдена в каталоге",
+            detail="Program not found in the catalog",
         )
 
     is_purchased = False
@@ -257,7 +257,7 @@ def process_questionnaire(
     if not plan_info:
         raise HTTPException(
             status_code=404,
-            detail="План не найден",
+            detail="Plan not found",
         )
 
     if not has_paid_purchase(
@@ -267,7 +267,7 @@ def process_questionnaire(
     ):
         raise HTTPException(
             status_code=403,
-            detail="План не куплен",
+            detail="Plan has not been purchased",
         )
 
     ai_user_data = {
@@ -284,14 +284,14 @@ def process_questionnaire(
         ai_user_data,
         plan_info.get(
             "title",
-            "Персональный план",
+            "Personalized Plan",
         ),
     )
 
     if generated_text is None:
         raise HTTPException(
             status_code=503,
-            detail="Не удалось сгенерировать план",
+            detail="Failed to generate the plan",
         )
 
     save_generated_plan(

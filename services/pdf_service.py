@@ -34,12 +34,9 @@ def create_pdf_buffer(plan_text: str) -> bytes:
             pdf.ln(5)
 
     try:
-        pdf_output = pdf.output(dest="S")
+        pdf_output = pdf.output()
 
-        if isinstance(pdf_output, str):
-            return pdf_output.encode("latin-1")
-
-        return pdf_output
+        return bytes(pdf_output)
 
     except Exception:
         logging.exception("Ошибка при создании PDF")

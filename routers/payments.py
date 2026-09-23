@@ -42,7 +42,7 @@ def check_csrf(
     ):
         raise HTTPException(
             status_code=403,
-            detail="Ошибка безопасности (CSRF)",
+            detail="Security error (CSRF)",
         )
 
 
@@ -86,14 +86,14 @@ def build_payment_success_html(session_id: str) -> str:
 
     return f"""
     <!DOCTYPE html>
-    <html lang="ru">
+    <html lang="en">
     <head>
         <meta charset="utf-8">
         <meta
             name="viewport"
             content="width=device-width, initial-scale=1"
         >
-        <title>Оплата успешна</title>
+        <title>Payment Successful</title>
     </head>
     <body style="
         margin:0;
@@ -108,11 +108,11 @@ def build_payment_success_html(session_id: str) -> str:
     ">
         <div>
             <h1 style="color:#22C55E;">
-                Оплата прошла успешно
+                Payment successful
             </h1>
 
             <p id="status-text">
-                Активируем доступ к программе...
+                Activating access to your program...
             </p>
 
             <button
@@ -128,7 +128,7 @@ def build_payment_success_html(session_id: str) -> str:
                     opacity:.65;
                 "
             >
-                Подождите...
+                Please wait...
             </button>
         </div>
 
@@ -162,8 +162,8 @@ def build_payment_success_html(session_id: str) -> str:
                     if (data.status === "paid") {{
                         button.disabled = false;
                         button.style.opacity = "1";
-                        button.textContent = "Перейти к программе";
-                        statusText.textContent = "Доступ активирован.";
+                        button.textContent = "Open Program";
+                        statusText.textContent = "Access activated.";
 
                         button.onclick = () => {{
                             window.history.replaceState(
@@ -183,8 +183,8 @@ def build_payment_success_html(session_id: str) -> str:
 
                     if (attempts >= maxAttempts) {{
                         statusText.textContent =
-                            "Активация занимает больше времени. Обновите страницу через несколько секунд.";
-                        button.textContent = "Обновить";
+                            "Activation is taking longer than expected. Refresh the page in a few seconds.";
+                        button.textContent = "Refresh";
                         button.disabled = false;
                         button.style.opacity = "1";
                         button.onclick = () => window.location.reload();
@@ -197,8 +197,8 @@ def build_payment_success_html(session_id: str) -> str:
 
                     if (attempts >= maxAttempts) {{
                         statusText.textContent =
-                            "Не удалось проверить статус. Обновите страницу.";
-                        button.textContent = "Обновить";
+                            "Could not verify the payment status. Refresh the page.";
+                        button.textContent = "Refresh";
                         button.disabled = false;
                         button.style.opacity = "1";
                         button.onclick = () => window.location.reload();
@@ -237,7 +237,7 @@ async def create_checkout_session(
     if not plan:
         raise HTTPException(
             status_code=404,
-            detail="План не найден",
+            detail="Plan not found",
         )
 
     if get_paid_purchase(
@@ -247,7 +247,7 @@ async def create_checkout_session(
     ):
         raise HTTPException(
             status_code=409,
-            detail="Этот курс уже куплен",
+            detail="This course has already been purchased",
         )
 
     current_domain = (
@@ -299,7 +299,7 @@ async def create_checkout_session(
         )
         raise HTTPException(
             status_code=502,
-            detail="Не удалось создать оплату",
+            detail="Failed to create checkout session",
         )
 
 
@@ -322,7 +322,7 @@ async def payment_success(
         )
         raise HTTPException(
             status_code=502,
-            detail="Не удалось проверить оплату",
+            detail="Failed to verify payment",
         )
 
     session_user_id, plan_id = get_session_identity(
@@ -373,7 +373,7 @@ async def payment_success(
             )
             raise HTTPException(
                 status_code=500,
-                detail="Не удалось активировать покупку",
+                detail="Failed to activate the purchase",
             )
 
     return HTMLResponse(

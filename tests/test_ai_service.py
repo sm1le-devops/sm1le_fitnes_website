@@ -27,7 +27,7 @@ def test_generate_training_plan_from_json(
                         "day": "Day 1",
                         "exercises": [
                             {
-                                "name": "Жим штанги",
+                                "name": "Barbell Bench Press",
                                 "sets": "3x8",
                             }
                         ],
@@ -58,16 +58,16 @@ def test_generate_training_plan_from_json(
     result = ai_service.generate_training_plan(
         {
             "height": 190,
-            "injuries": "плечо",
+            "injuries": "shoulder",
         },
         "Custom title",
     )
 
     assert result is not None
     assert "# Custom title" in result
-    assert "высокий рост" in result
-    assert "Особые указания" in result
-    assert "Жим гантелей" in result
+    assert "tall users" in result
+    assert "Special Safety Guidelines" in result
+    assert "Dumbbell Press (neutral grip)" in result
     assert "Sleep well" in result
 
 

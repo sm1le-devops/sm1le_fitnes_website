@@ -1,19 +1,21 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ plan.title }} — sm1le.fitness</title>
-    <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
-    <style>
+  <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
+  <link rel="apple-touch-icon" href="/static/favicon.png">
+  <link rel="icon" sizes="192x192" href="/static/favicon.png">
+<style>
         :root {
             --bg: #0F172A;
             --card: #1E293B;
             --accent: #F97316;
             --text: #F8FAFC;
             --text-muted: #94A3B8;
-            --success: #22C55E; /* ДОБАВИЛИ ЦВЕТ */
+            --success: #22C55E; /* Success color */
         }
 
         * {
@@ -67,7 +69,7 @@
 
         .main-content {
             position: relative;
-            padding: 0 20px 140px 20px; /* Увеличили нижний отступ, чтобы кнопка не закрывала текст */
+            padding: 0 20px 140px 20px; /* Extra bottom space so the action bar does not cover the content */
             margin-top: -40px;
             z-index: 2;
         }
@@ -112,7 +114,7 @@
             margin-bottom: 2px;
         }
 
-        .action-bar { /* ИСПРАВЛЕНО: Теперь класс соответствует HTML */
+        .action-bar { /* Matches the HTML action bar */
             position: fixed;
             bottom: 0;
             left: 0;
@@ -162,32 +164,32 @@
     </div>
 
     <div class="main-content">
-        <div class="category-tag">План тренировок</div>
+        <div class="category-tag">Workout Plan</div>
         <h1>{{ plan.title }}</h1>
         <p style="color: var(--text-muted); font-size: 15px;">{{ plan.full_info }}</p>
 
         <div class="info-grid">
-            <div class="info-card"><span>Срок</span><strong>{{ plan.duration }}</strong></div>
-            <div class="info-card"><span>Интенсивность</span><strong>{{ plan.intensity }}</strong></div>
-            <div class="info-card"><span>Локация</span><strong>Дом / Зал</strong></div>
-            <div class="info-card"><span>Доступ</span><strong>Навсегда</strong></div>
+            <div class="info-card"><span>Duration</span><strong>{{ plan.duration }}</strong></div>
+            <div class="info-card"><span>Intensity</span><strong>{{ plan.intensity }}</strong></div>
+            <div class="info-card"><span>Location</span><strong>Home / Gym</strong></div>
+            <div class="info-card"><span>Access</span><strong>Lifetime</strong></div>
         </div>
 
-        <h3 style="margin-top: 30px;">Что включено:</h3>
+        <h3 style="margin-top: 30px;">What's included:</h3>
         <ul style="color: var(--text-muted); padding-left: 20px; line-height: 1.8;">
-            <li>Видео-инструкции к упражнениям</li>
-            <li>Рекомендации по питанию</li>
-            <li>Поддержка в чате 24/7</li>
+            <li>Exercise video instructions</li>
+            <li>Nutrition recommendations</li>
+            <li>24/7 chat support</li>
         </ul>
     </div>
 
     <div class="action-bar"> {% if is_purchased %}
         <a href="/course/{{ plan_id }}" class="buy-button" style="background: var(--success); justify-content: center;">
-            <span>Открыть программу</span>
+            <span>Open Program</span>
         </a>
         {% else %}
         <button id="checkout-button" class="buy-button">
-            <span>Начать программу</span>
+            <span>Start Program</span>
             <span class="price-label">{{ plan.price }} ₽</span>
         </button>
         {% endif %}
@@ -202,7 +204,7 @@
             const checkoutButton = document.getElementById('checkout-button');
 
             checkoutButton.addEventListener('click', async () => {
-                checkoutButton.innerText = 'Загрузка...';
+                checkoutButton.innerText = 'Loading...';
                 checkoutButton.disabled = true;
                 try {
                     const csrfToken = document.cookie
@@ -229,12 +231,12 @@
                     if (session.id) {
                         await stripe.redirectToCheckout({ sessionId: session.id });
                     } else {
-                        alert('Ошибка: ' + (session.detail || 'Не удалось создать сессию'));
+                        alert('Error: ' + (session.detail || 'Failed to create checkout session'));
                         checkoutButton.disabled = false;
-                        checkoutButton.innerHTML = '<span>Начать программу</span><span class="price-label">{{ plan.price }} ₽</span>';
+                        checkoutButton.innerHTML = '<span>Start Program</span><span class="price-label">{{ plan.price }} ₽</span>';
                     }
                 } catch (err) {
-                    alert('Ошибка сети');
+                    alert('Network error');
                     checkoutButton.disabled = false;
                 }
             });

@@ -1,75 +1,144 @@
 {
   "program_meta": {
-    "name": "Гипертрофия 1.0: Сила и Объем",
-    "duration": "4 недели",
-    "focus": "Набор мышечной массы (Full Body Split)"
+    "name": "Hypertrophy 1.0: Strength and Size",
+    "duration": "4 weeks",
+    "focus": "Muscle Gain (Full Body Split)"
   },
   "modules": {
-    "tall_person_advice": "💡 **Совет для высоких (185+ см):** У вас длинные конечности. В приседаниях используйте штангетки или подкладывайте блины под пятки, чтобы компенсировать длину голени. В жимах не опускайте локти слишком низко, чтобы не перегружать связки.",
-    "shoulder_injury_mod": "⚠️ **Корректировка (Плечо):** Исключаем жим штанги из-за головы и классический жим лежа. Работаем только с гантелями (нейтральный хват) и в тренажерах с фиксированной траекторией (Хаммер).",
-    "nutrition_base": "🍗 **Питание:** Ваш целевой профицит — вес тела * 35-40 ккал. Спите не менее 8 часов, именно в это время происходит основной синтез белка."
+    "tall_person_advice": "💡 **Tip for taller athletes (185+ cm):** You have longer limbs. During squats, use weightlifting shoes or place small plates under your heels to compensate for shin length. During pressing movements, avoid lowering your elbows too far to reduce unnecessary stress on the joints.",
+    "shoulder_injury_mod": "⚠️ **Adjustment (Shoulder):** Avoid behind-the-neck barbell presses and the classic barbell bench press. Use dumbbells with a neutral grip and machines with a fixed movement path (Hammer Strength-style machines).",
+    "nutrition_base": "🍗 **Nutrition:** Your target calorie surplus is body weight × 35–40 kcal. Sleep at least 8 hours, as recovery and muscle protein synthesis are especially important during sleep."
   },
   "weeks": [
     {
       "week": 1,
-      "title": "Технический фундамент",
-      "intensity": "70% (запас 2-3 повторения)",
+      "title": "Technical Foundation",
+      "intensity": "70% (2–3 reps in reserve)",
       "workouts": [
         {
-          "day": "Понедельник (Грудь/Трицепс)",
+          "day": "Monday (Chest / Triceps)",
           "exercises": [
-            {"name": "Жим гантелей на наклонной 30°", "sets": "4x10", "tag": "chest"},
-            {"name": "Отжимания на брусьях (акцент на грудь)", "sets": "3xMax", "tag": "chest_dips"},
-            {"name": "Разведения гантелей лежа", "sets": "3x12", "tag": "chest_fly"},
-            {"name": "Французский жим с EZ-грифом", "sets": "3x10", "tag": "triceps"},
-            {"name": "Разгибания на блоке (канатная рукоять)", "sets": "3x15", "tag": "triceps_ext"}
+            {
+              "name": "Incline Dumbbell Press (30°)",
+              "sets": "4x10",
+              "tag": "chest"
+            },
+            {
+              "name": "Dips (Chest Focus)",
+              "sets": "3xMax",
+              "tag": "chest_dips"
+            },
+            {
+              "name": "Dumbbell Fly",
+              "sets": "3x12",
+              "tag": "chest_fly"
+            },
+            {
+              "name": "EZ-Bar French Press",
+              "sets": "3x10",
+              "tag": "triceps"
+            },
+            {
+              "name": "Cable Triceps Extension (Rope)",
+              "sets": "3x15",
+              "tag": "triceps_ext"
+            }
           ],
           "tips": [
-            "Сводите лопатки вместе перед началом жима — это создаст жесткую опору.",
-            "На трицепсе фиксируйте локти в одной точке, не давайте им гулять.",
-            "Пейте 500 мл воды с электролитами прямо во время тренировки."
+            "Retract your shoulder blades before pressing to create a stable base.",
+            "Keep your elbows fixed in one position during triceps exercises instead of letting them drift.",
+            "Drink about 500 ml of water with electrolytes during your workout."
           ]
         },
         {
-          "day": "Среда (Спина/Бицепс)",
+          "day": "Wednesday (Back / Biceps)",
           "exercises": [
-            {"name": "Подтягивания широким хватом", "sets": "4x8", "tag": "back_pull"},
-            {"name": "Тяга штанги в наклоне (обратный хват)", "sets": "4x10", "tag": "back_row"},
-            {"name": "Тяга горизонтального блока к поясу", "sets": "3x12", "tag": "back_row_machine"},
-            {"name": "ПШБ (Подъем штанги на бицепс) стоя", "sets": "3x10", "tag": "biceps_curl"},
-            {"name": "Сгибания 'Молотки'", "sets": "3x12", "tag": "biceps_hammer"}
+            {
+              "name": "Wide-Grip Pull-Ups",
+              "sets": "4x8",
+              "tag": "back_pull"
+            },
+            {
+              "name": "Bent-Over Barbell Row (Reverse Grip)",
+              "sets": "4x10",
+              "tag": "back_row"
+            },
+            {
+              "name": "Seated Cable Row",
+              "sets": "3x12",
+              "tag": "back_row_machine"
+            },
+            {
+              "name": "Standing Barbell Curl",
+              "sets": "3x10",
+              "tag": "biceps_curl"
+            },
+            {
+              "name": "Hammer Curls",
+              "sets": "3x12",
+              "tag": "biceps_hammer"
+            }
           ],
           "tips": [
-            "Представляйте, что ваши кисти — это просто крюки. Тяните локтями, а не бицепсом.",
-            "В нижней точке полностью растягивайте широчайшие, но не расслабляйте плечи.",
-            "Используйте кистевые лямки в тягах, чтобы предплечья не забились раньше спины."
+            "Think of your hands as hooks. Pull with your elbows rather than your biceps.",
+            "Fully stretch your lats at the bottom, but do not let your shoulders completely relax.",
+            "Use lifting straps on rowing movements if your forearms fatigue before your back."
           ]
         },
         {
-          "day": "Пятница (Ноги/Плечи)",
+          "day": "Friday (Legs / Shoulders)",
           "exercises": [
-            {"name": "Приседания со штангой / Жим ногами", "sets": "4x10", "tag": "legs_quads"},
-            {"name": "Мертвая тяга на прямых ногах", "sets": "4x12", "tag": "legs_hams"},
-            {"name": "Жим гантелей сидя", "sets": "3x10", "tag": "shoulders_press"},
-            {"name": "Махи гантелями в стороны", "sets": "3x15", "tag": "shoulders_lat"},
-            {"name": "Подъемы на носки стоя", "sets": "4x15", "tag": "calves"}
+            {
+              "name": "Barbell Squat / Leg Press",
+              "sets": "4x10",
+              "tag": "legs_quads"
+            },
+            {
+              "name": "Stiff-Leg Deadlift",
+              "sets": "4x12",
+              "tag": "legs_hams"
+            },
+            {
+              "name": "Seated Dumbbell Press",
+              "sets": "3x10",
+              "tag": "shoulders_press"
+            },
+            {
+              "name": "Dumbbell Lateral Raises",
+              "sets": "3x15",
+              "tag": "shoulders_lat"
+            },
+            {
+              "name": "Standing Calf Raises",
+              "sets": "4x15",
+              "tag": "calves"
+            }
           ],
           "tips": [
-            "На приседаниях держите пресс напряженным — это ваш 'естественный атлетический пояс'.",
-            "В махах на плечи ведите мизинец чуть выше большого пальца для изоляции среднего пучка.",
-            "После тренировки ног сделайте 5 минут легкой заминки на велотренажере, чтобы вымыть лактат."
+            "Keep your core braced during squats — it acts as your natural lifting belt.",
+            "During lateral raises, keep your pinky slightly higher than your thumb to emphasize the middle deltoid.",
+            "After leg training, do 5 minutes of light cycling as a cool-down."
           ]
         }
       ]
     },
     {
-      "week": 2, "title": "Прогрессия объема", "intensity": "80% (запас 1-2 повт)", "workouts": "аналогично неделе 1 с увеличением весов на 2-5кг"
+      "week": 2,
+      "title": "Volume Progression",
+      "intensity": "80% (1–2 reps in reserve)",
+      "workouts": "Same structure as Week 1, with working weights increased by 2–5 kg."
     },
     {
-      "week": 3, "title": "Пиковая нагрузка", "intensity": "90% (до отказа в последних сетах)", "workouts": "аналогично с добавлением дроп-сетов в финальных упражнениях"
+      "week": 3,
+      "title": "Peak Load",
+      "intensity": "90% (to failure on the final sets)",
+      "workouts": "Same structure, with drop sets added to the final exercises."
     },
     {
-      "week": 4, "title": "Делоад (Восстановление)", "intensity": "50% весов", "workouts": "снижение количества подходов вдвое для суперкомпенсации"
+      "week": 4,
+      "title": "Deload (Recovery)",
+      "intensity": "50% of working weight",
+      "workouts": "Reduce the number of sets by half to support recovery and supercompensation."
     }
   ]
 }

@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Мой Профиль | sm1le.fitness</title>
+  <title>My Profile | sm1le.fitness</title>
   <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
   <link rel="apple-touch-icon" href="/static/favicon.png">
   <link rel="icon" sizes="192x192" href="/static/favicon.png">
-  <style>
+<link rel="apple-touch-icon" href="/static/favicon.png">
+<style>
     :root {
       --bg: #0F172A;
       --card-bg: #1E293B;
@@ -168,7 +169,7 @@
       border: 1px solid rgba(239, 68, 68, 0.2);
     }
 
-    /* === НИЖНИЙ НАВБАР === */
+    /* === BOTTOM NAVIGATION === */
     .bottom-nav {
       position: fixed;
       bottom: 20px;
@@ -219,7 +220,7 @@
     }
 
     .nav-item.active svg {
-      /* МЫ УБРАЛИ FILL, ОСТАВИЛИ ТОЛЬКО КРАСИВОЕ СВЕЧЕНИЕ */
+      /* Keep only the glow, without fill */
       filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.4));
     }
   </style>
@@ -230,32 +231,32 @@
   <div class="app-wrapper">
     <div class="profile-header">
       <div id="avatar-wrapper">
-        <img src="/static/default-avatar.png" class="avatar" alt="Аватар">
+        <img src="/static/default-avatar.png" class="avatar" alt="Avatar">
       </div>
-      <h1 id="display-username" style="margin: 0; font-size: 24px;">{{ user.username if user else 'Профиль' }}</h1>
-      <p style="color: var(--text-muted); font-size: 14px; margin-top: 5px;">Настройки аккаунта</p>
+      <h1 id="display-username" style="margin: 0; font-size: 24px;">{{ user.username if user else 'Profile' }}</h1>
+      <p style="color: var(--text-muted); font-size: 14px; margin-top: 5px;">Account Settings</p>
     </div>
 
     <form id="profile-form" method="post" action="/auth/profile">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
       <div class="form-section">
-        <label>Имя пользователя</label>
+        <label>Username</label>
         <input type="text" id="username" name="username" value="{{ user.username if user else '' }}" required>
 
         <label>Email</label>
         <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required>
 
-        <label>Текущий пароль</label>
+        <label>Current Password</label>
         <input
           type="password"
           id="current-password"
           name="current_password"
           autocomplete="current-password"
-          placeholder="Нужен только для смены email или пароля"
+          placeholder="Required only to change email or password"
         >
 
-        <label>Новый пароль</label>
+        <label>New Password</label>
         <input
           type="password"
           id="password"
@@ -263,30 +264,30 @@
           autocomplete="new-password"
           minlength="12"
           maxlength="64"
-          placeholder="Минимум 12 символов"
+          placeholder="Minimum 12 characters"
         >
       </div>
 
       <div class="grid-inputs" style="grid-template-columns: 1fr; margin-bottom: 12px;">
         <div>
-          <label>Пол</label>
+          <label>Gender</label>
           <select name="gender"
             style="width: 100%; padding: 14px; border-radius: 16px; border: 1px solid #334155; background: var(--card-bg); color: white; font-size: 15px; outline: none;">
-            <option value="" {% if not profile or not profile.gender %}selected{% endif %}>Не указан</option>
-            <option value="Мужской" {% if profile and profile.gender=='Мужской' %}selected{% endif %}>Мужской</option>
-            <option value="Женский" {% if profile and profile.gender=='Женский' %}selected{% endif %}>Женский</option>
+            <option value="" {% if not profile or not profile.gender %}selected{% endif %}>Not specified</option>
+            <option value="Мужской" {% if profile and profile.gender=='Мужской' %}selected{% endif %}>Male</option>
+            <option value="Женский" {% if profile and profile.gender=='Женский' %}selected{% endif %}>Female</option>
           </select>
         </div>
       </div>
 
       <div class="grid-inputs">
         <div>
-          <label>Вес (кг)</label>
+          <label>Weight (kg)</label>
           <input type="number" step="0.1" id="weight" name="weight"
             value="{{ profile.weight if profile and profile.weight is not none else '' }}" placeholder="0">
         </div>
         <div>
-          <label>Рост (см)</label>
+          <label>Height (cm)</label>
           <input type="number" id="height" name="height"
             value="{{ profile.height if profile and profile.height is not none else '' }}" placeholder="0">
         </div>
@@ -294,8 +295,8 @@
       <div id="message"></div>
 
       <div class="btn-group">
-        <button type="submit" class="btn-save" id="save-button" disabled>Сохранить изменения</button>
-        <button type="button" class="btn-logout" id="logout-btn">Выйти из аккаунта</button>
+        <button type="submit" class="btn-save" id="save-button" disabled>Save Changes</button>
+        <button type="button" class="btn-logout" id="logout-btn">Log Out</button>
       </div>
     </form>
   </div>
@@ -306,21 +307,21 @@
         <path
           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
-      <span>Главная</span>
+      <span>Home</span>
     </a>
     <a href="/auth/welcome" class="nav-item">
       <svg viewBox="0 0 24 24">
         <path
           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
       </svg>
-      <span>Планы</span>
+      <span>Plans</span>
     </a>
     <a href="/auth/profile" class="nav-item active">
       <svg viewBox="0 0 24 24">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
         <circle cx="12" cy="7" r="4"></circle>
       </svg>
-      <span>Профиль</span>
+      <span>Profile</span>
     </a>
   </nav>
 
@@ -338,7 +339,7 @@
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        message.textContent = 'Сохранение...';
+        message.textContent = 'Saving...';
         message.style.color = 'var(--text-muted)';
 
         const formData = new FormData(form);
@@ -353,12 +354,12 @@
           const data = await response.json();
 
           if (!response.ok) {
-            message.textContent = data.detail || 'Ошибка при сохранении';
+            message.textContent = data.detail || 'Failed to save changes';
             message.style.color = 'var(--error)';
             return;
           }
 
-          message.textContent = data.message || 'Успешно обновлено!';
+          message.textContent = data.message || 'Updated successfully!';
           message.style.color = 'var(--success)';
           saveButton.disabled = true;
 
@@ -378,7 +379,7 @@
           }
         } catch (error) {
           console.error(error);
-          message.textContent = 'Ошибка сети';
+          message.textContent = 'Network error';
           message.style.color = 'var(--error)';
         }
       });
@@ -386,14 +387,14 @@
 
     if (logoutButton) {
       logoutButton.addEventListener('click', async () => {
-        const confirmed = confirm('Вы уверены, что хотите выйти?');
+        const confirmed = confirm('Are you sure you want to log out?');
 
         if (!confirmed) {
           return;
         }
 
         logoutButton.disabled = true;
-        logoutButton.textContent = 'Выход...';
+        logoutButton.textContent = 'Logging out...';
 
         try {
           const csrfInput = document.querySelector(
@@ -426,9 +427,9 @@
           console.error(error);
 
           logoutButton.disabled = false;
-          logoutButton.textContent = 'Выйти из аккаунта';
+          logoutButton.textContent = 'Log Out';
 
-          alert('Не удалось выйти из аккаунта');
+          alert('Failed to log out');
         }
       });
     }

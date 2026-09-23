@@ -1,20 +1,20 @@
 {
   "weight_loss": {
-    "title": "Интенсивное похудение",
-    "duration": "4 недели",
-    "intensity": "Высокая",
+    "title": "Intensive Weight Loss",
+    "duration": "4 weeks",
+    "intensity": "High",
     "price": "2600",
     "image": "/static/uploads/photo2.png",
-    "description": "Персональный план жиросжигания, созданный ИИ под твои параметры.",
-    "full_info": "После оплаты вы пройдете подробное анкетирование. Наш ИИ проанализирует ваш опыт, доступное оборудование и травмы, чтобы составить максимально эффективный план."
+    "description": "A personalized fat-loss plan created by AI based on your individual parameters.",
+    "full_info": "After payment, you will complete a detailed questionnaire. Our AI will analyze your experience, available equipment, and injuries to create the most effective personalized plan."
   },
   "muscle_gain": {
-    "title": "Набор массы: PRO",
-    "duration": "8 недель",
-    "intensity": "Максимальная",
+    "title": "Muscle Gain: PRO",
+    "duration": "8 weeks",
+    "intensity": "Maximum",
     "price": "2900",
     "image": "/static/uploads/photo1.png",
-    "description": "Научный подход к росту мышц с учетом твоей генетики.",
-    "full_info": "Программа включает в себя расчет КБЖУ и тренировочный план, адаптированный под твой стаж занятий."
+    "description": "A science-based approach to muscle growth tailored to your individual characteristics.",
+    "full_info": "The program includes personalized calorie and macronutrient targets together with a training plan adapted to your experience level."
   }
 }

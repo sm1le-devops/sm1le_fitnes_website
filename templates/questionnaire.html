@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Анкета — sm1le.fitness</title>
-    <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
-    <style>
+    <title>Questionnaire — sm1le.fitness</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
+  <link rel="apple-touch-icon" href="/static/favicon.png">
+  <link rel="icon" sizes="192x192" href="/static/favicon.png">
+<style>
         :root {
             --bg: #0F172A;
             --card-bg: #1E293B;
@@ -71,7 +73,7 @@
             outline: none;
         }
 
-        /* Единый стиль для кнопки */
+        /* Shared button style */
         .btn-generate {
             background: var(--accent);
             color: white;
@@ -98,7 +100,7 @@
             cursor: not-allowed;
         }
 
-        /* Стиль для лоадера */
+        /* Loader style */
         .loader {
             width: 18px;
             height: 18px;
@@ -121,14 +123,14 @@
 
         .back-btn-circle {
             position: fixed;
-            /* Чтобы она не уплывала при скролле анкеты */
+            /* Keep the button fixed while scrolling */
             top: 20px;
             left: 16px;
             z-index: 100;
             background: rgba(30, 41, 59, 0.6);
-            /* Полупрозрачный фон */
+            /* Semi-transparent background */
             backdrop-filter: blur(8px);
-            /* Эффект размытия сзади */
+            /* Background blur effect */
             -webkit-backdrop-filter: blur(8px);
             width: 40px;
             height: 40px;
@@ -158,59 +160,59 @@
     <div class="app-wrapper">
 
         <div class="greeting">
-            <h1>Почти готово!</h1>
-            <p>Заполни анкету, и наш ИИ составит твой персональный план тренировок.</p>
+            <h1>Almost ready!</h1>
+            <p>Complete the questionnaire and our AI will create your personalized workout plan.</p>
         </div>
 
         <form id="ai-form" class="auth-form" method="POST" action="/generate-plan/{{ plan_id }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="input-group">
-                <label>Твой опыт в спорте</label>
+                <label>Your Training Experience</label>
                 <select name="experience" required>
-                    <option value="beginner">Новичок (0-1 год)</option>
-                    <option value="middle">Средний (1-3 года)</option>
-                    <option value="pro">Профи (3+ года)</option>
+                    <option value="beginner">Beginner (0-1 year)</option>
+                    <option value="middle">Intermediate (1-3 years)</option>
+                    <option value="pro">Advanced (3+ years)</option>
                 </select>
             </div>
 
             <div class="input-group">
-                <label>Травмы или ограничения</label>
-                <input type="text" name="injuries" value="нет" required>
+                <label>Injuries or Limitations</label>
+                <input type="text" name="injuries" value="none" required>
             </div>
 
             <div class="input-group">
-                <label>Где тренируешься?</label>
+                <label>Where Do You Train?</label>
                 <select name="equipment">
-                    <option value="gym">Тренажерный зал (полный набор)</option>
-                    <option value="home">Дом (гантели или без веса)</option>
-                    <option value="street">Улица (турники, брусья)</option>
+                    <option value="gym">Gym (full equipment)</option>
+                    <option value="home">Home (dumbbells or bodyweight)</option>
+                    <option value="street">Outdoor (pull-up and parallel bars)</option>
                 </select>
             </div>
             <div class="input-group">
-                <label>Ваш пол</label>
+                <label>Gender</label>
                 <select name="gender" required>
-                    <option value="male">Мужской</option>
-                    <option value="female">Женский</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
                 </select>
             </div>
 
             <div class="input-group">
-                <label>Возраст</label>
-                <input type="number" name="age" placeholder="Например: 25" required>
+                <label>Age</label>
+                <input type="number" name="age" placeholder="For example: 25" required>
             </div>
 
             <div class="input-group">
-                <label>Вес (кг)</label>
-                <input type="number" step="0.1" name="weight" placeholder="Например: 75.5" required>
+                <label>Weight (kg)</label>
+                <input type="number" step="0.1" name="weight" placeholder="For example: 75.5" required>
             </div>
 
             <div class="input-group">
-                <label>Рост (см)</label>
-                <input type="number" name="height" placeholder="Например: 180" required>
+                <label>Height (cm)</label>
+                <input type="number" name="height" placeholder="For example: 180" required>
             </div>
 
             <button type="submit" id="submitBtn" class="btn-generate">
-                <span id="btnText">🚀 Сгенерировать мой план</span>
+                <span id="btnText">🚀 Generate My Plan</span>
                 <div id="loader" class="loader"></div>
             </button>
 
@@ -223,9 +225,9 @@
             const text = document.getElementById('btnText');
             const loader = document.getElementById('loader');
 
-            // Блокируем кнопку, чтобы не нажали дважды
+            // Disable the button to prevent duplicate submissions
             btn.disabled = true;
-            text.innerText = "ИИ составляет план...";
+            text.innerText = "AI is creating your plan...";
             loader.style.display = "inline-block";
         };
     </script>

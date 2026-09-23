@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{{ plan.title if plan else 'Курс' }} — sm1le.fitness</title>
-    <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <title>{{ plan.title if plan else 'Course' }} — sm1le.fitness</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
+  <link rel="apple-touch-icon" href="/static/favicon.png">
+  <link rel="icon" sizes="192x192" href="/static/favicon.png">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
         :root {
@@ -53,7 +55,7 @@
             padding: 16px;
         }
 
-        /* Селектор дней */
+        /* Day selector */
         .day-selector {
             display: flex;
             overflow-x: auto;
@@ -144,7 +146,7 @@
             max-height: 300px;
         }
 
-        /* --- Стили для Оплаты --- */
+        /* --- Payment styles --- */
         .paywall-container {
             display: flex;
             flex-direction: column;
@@ -205,7 +207,7 @@
 
         .back-btn:hover {
             color: var(--accent);
-            /* Немного интерактива при наведении */
+            /* Subtle hover interaction */
         }
     </style>
 </head>
@@ -219,24 +221,24 @@
                 <path d="M15 18l-6-6 6-6" />
             </svg>
         </a>
-        <h1>{{ plan.title if plan else 'Программа' }}</h1>
+        <h1>{{ plan.title if plan else 'Program' }}</h1>
     </div>
 
     <div class="content">
         {% if not is_purchased %}
         <div class="paywall-container">
             <div class="buy-card">
-                <h2>Полный доступ</h2>
-                <p>Открой все тренировки программы навсегда, видео-инструкции и план питания.</p>
+                <h2>Full Access</h2>
+                <p>Unlock lifetime access to all program workouts, video instructions, and the nutrition plan.</p>
                 <div class="price-tag">{{ plan.price }} ₽</div>
                 <button id="stripe-button" class="day-btn active" style="width: 100%; padding: 16px; font-size: 1rem;">
-                    КУПИТЬ КУРС
+                    BUY COURSE
                 </button>
             </div>
         </div>
         {% else %}
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <span class="purchased-badge" style="margin-bottom: 0;">✓ ДОСТУП ОПЛАЧЕН</span>
+            <span class="purchased-badge" style="margin-bottom: 0;">✓ ACCESS PURCHASED</span>
 
             <a href="/course/{{ plan_id }}/download" download="My_Training_Plan.pdf" class="day-btn"
                 style="text-decoration: none; padding: 6px 12px; font-size: 0.8rem; background: #22C55E; border-color: #22C55E; display: flex; align-items: center; gap: 5px;">
@@ -254,7 +256,7 @@
             {% if plan and plan.days %}
             {% for day in plan.days %}
             <button class="day-btn{% if loop.first %} active{% endif %}" data-day-index="{{ loop.index0 }}">
-                День {{ loop.index }}
+                Day {{ loop.index }}
             </button>
             {% endfor %}
             {% endif %}
@@ -271,26 +273,26 @@
     </script>
 
     <script>
-        // --- 1. БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ДАННЫХ ---
+        // --- 1. SAFE DATA LOADING ---
         const rawContent = document.getElementById('plan-data-raw').textContent;
         let planData = null;
 
         try {
             planData = JSON.parse(rawContent);
-            console.log("Данные курса загружены");
+            console.log("Course data loaded");
         } catch (e) {
-            console.error("Ошибка парсинга плана:", e);
-            planData = rawContent.trim(); // Если не JSON, считаем просто строкой
+            console.error("Failed to parse plan:", e);
+            planData = rawContent.trim(); // If it is not JSON, treat it as a plain string
         }
 
-        // --- 2. ЛОГИКА ПОКУПКИ (STRIPE) ---
+        // --- 2. PURCHASE FLOW (STRIPE) ---
         const stripeBtn = document.getElementById('stripe-button');
 
         if (stripeBtn) {
             const stripe = Stripe('{{ stripe_publishable_key }}');
 
             stripeBtn.addEventListener('click', async () => {
-                stripeBtn.innerText = 'Загрузка...';
+                stripeBtn.innerText = 'Loading...';
                 stripeBtn.disabled = true;
 
                 try {
@@ -326,31 +328,31 @@
                     }
 
                     alert(
-                        'Ошибка: ' +
-                        (session.detail || 'Не удалось создать оплату')
+                        'Error: ' +
+                        (session.detail || 'Failed to create checkout session')
                     );
 
                 } catch (e) {
-                    alert('Ошибка связи с сервером');
+                    alert('Server connection error');
 
                 } finally {
-                    stripeBtn.innerText = 'КУПИТЬ КУРС';
+                    stripeBtn.innerText = 'BUY COURSE';
                     stripeBtn.disabled = false;
                 }
             });
         }
 
-        // --- 3. ФУНКЦИЯ ОТОБРАЖЕНИЯ (УМНАЯ) ---
+        // --- 3. RENDERING LOGIC ---
         function showDay(index) {
             const container = document.getElementById('exerciseList');
             const selector = document.getElementById('daySelector');
             if (!container) return;
 
-            // ЛОГИКА ДЛЯ ГЕНЕРИРУЕМОГО ПЛАНА (Markdown строка)
+            // GENERATED PLAN LOGIC (Markdown string)
             if (typeof planData === 'string') {
-                if (selector) selector.style.display = 'none'; // Скрываем переключатель дней, так как план сплошной
+                if (selector) selector.style.display = 'none'; // Hide the day selector because the generated plan is continuous
 
-                // Используем библиотеку marked (у тебя она подключена в head) для рендера Markdown
+                // Use the marked library loaded in the head to render Markdown
                 container.innerHTML = `
                 <div class="exercise-card" style="line-height: 1.6; font-size: 1.05rem; white-space: normal; background: var(--card); border: 1px solid rgba(249, 115, 22, 0.2);">
                     <div class="markdown-content">
@@ -361,7 +363,7 @@
                 return;
             }
 
-            // ЛОГИКА ДЛЯ СТАТИЧЕСКИХ КУРСОВ (Массив дней)
+            // STATIC COURSE LOGIC (array of days)
             if (planData && planData.days) {
                 document.querySelectorAll('.day-btn').forEach((btn, i) => {
                     btn.classList.toggle('active', i === index);
@@ -383,18 +385,18 @@
                 }
                 container.innerHTML = htmlContent;
             } else {
-                container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--muted);"><h3>План еще не сформирован. Заполните анкету.</h3></div>`;
+                container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--muted);"><h3>Your plan has not been generated yet. Complete the questionnaire.</h3></div>`;
             }
         }
 
-        // --- 4. ИНИЦИАЛИЗАЦИЯ ---
+        // --- 4. INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
             showDay(0);
         });
     </script>
 
     <style>
-        /* Добавим немного стилей для красоты текста внутри Markdown */
+        /* Additional styles for rendered Markdown content */
         .markdown-content h1,
         .markdown-content h2 {
             color: var(--accent);

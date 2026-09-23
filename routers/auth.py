@@ -80,8 +80,8 @@ def raise_registration_blocked(
     raise HTTPException(
         status_code=429,
         detail=(
-            "Слишком много запросов. "
-            "Попробуйте позже."
+            "Too many requests. "
+            "Please try again later."
         ),
         headers={
             "Retry-After": str(
@@ -122,7 +122,7 @@ def check_csrf(
     ):
         raise HTTPException(
             status_code=403,
-            detail="Ошибка безопасности (CSRF)",
+            detail="Security error (CSRF)",
         )
 
 
@@ -155,8 +155,8 @@ def raise_login_blocked(
     raise HTTPException(
         status_code=429,
         detail=(
-            "Слишком много попыток входа. "
-            "Попробуйте позже."
+            "Too many login attempts. "
+            "Please try again later."
         ),
         headers={
             "Retry-After": str(
@@ -201,8 +201,8 @@ async def register(
         raise HTTPException(
             status_code=400,
             detail=(
-                "Имя может содержать только "
-                "буквы, цифры и '_'"
+                "Username may contain only "
+                "letters, numbers, and '_'"
             ),
         )
 
@@ -231,8 +231,8 @@ async def register(
         raise HTTPException(
             status_code=400,
             detail=(
-                "Не удалось зарегистрировать "
-                "аккаунт с этими данными"
+                "Could not register "
+                "an account with these details"
             ),
         )
 
@@ -261,8 +261,8 @@ async def register(
         raise HTTPException(
             status_code=409,
             detail=(
-                "Не удалось зарегистрировать "
-                "аккаунт с этими данными"
+                "Could not register "
+                "an account with these details"
             ),
         )
 
@@ -299,8 +299,8 @@ async def resend_verification(
 
     generic_response = {
         "message": (
-            "Если аккаунт существует и email ещё "
-            "не подтверждён, письмо отправлено."
+            "If the account exists and the email is "
+            "not yet verified, a verification email has been sent."
         )
     }
 
@@ -381,8 +381,8 @@ async def verify_email(
     if user_id is None:
         return HTMLResponse(
             content=(
-                "<h2>Ссылка недействительна или истекла.</h2>"
-                '<p><a href="/auth/register">Вернуться к регистрации</a></p>'
+                "<h2>The link is invalid or has expired.</h2>"
+                '<p><a href="/auth/register">Back to registration</a></p>'
             ),
             status_code=400,
         )
@@ -395,8 +395,8 @@ async def verify_email(
     if user is None:
         return HTMLResponse(
             content=(
-                "<h2>Аккаунт не найден.</h2>"
-                '<p><a href="/auth/register">Вернуться к регистрации</a></p>'
+                "<h2>Account not found.</h2>"
+                '<p><a href="/auth/register">Back to registration</a></p>'
             ),
             status_code=404,
         )
@@ -422,8 +422,8 @@ async def verify_email(
 
     return HTMLResponse(
         content=(
-            "<h2>Email подтверждён.</h2>"
-            '<p><a href="/auth/login">Войти в аккаунт</a></p>'
+            "<h2>Email verified.</h2>"
+            '<p><a href="/auth/login">Sign in to your account</a></p>'
         ),
         status_code=200,
     )
@@ -489,7 +489,7 @@ async def login(
         raise HTTPException(
             status_code=401,
             detail=(
-                "Неверный логин или пароль"
+                "Invalid username or password"
             ),
         )
 
@@ -500,13 +500,13 @@ async def login(
     ):
         raise HTTPException(
             status_code=403,
-            detail="Подтвердите email перед входом",
+            detail="Verify your email before signing in",
         )
 
     if not db_user.is_active:
         raise HTTPException(
             status_code=403,
-            detail="Аккаунт отключён",
+            detail="Account is disabled",
         )
 
     old_session_id = (
@@ -743,8 +743,8 @@ async def update_profile(
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "Для изменения email или пароля "
-                    "укажите текущий пароль"
+                    "To change your email or password, "
+                    "enter your current password"
                 ),
             )
 
@@ -759,8 +759,8 @@ async def update_profile(
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "Некорректное имя "
-                    "пользователя"
+                    "Invalid "
+                    "username"
                 ),
             )
 
@@ -778,7 +778,7 @@ async def update_profile(
         if username_exists:
             raise HTTPException(
                 status_code=400,
-                detail="Логин уже занят",
+                detail="Username is already taken",
             )
 
         current_user.username = username
@@ -800,7 +800,7 @@ async def update_profile(
         if email_exists:
             raise HTTPException(
                 status_code=400,
-                detail="Email уже занят",
+                detail="Email is already taken",
             )
 
         current_user.email = (
@@ -813,8 +813,8 @@ async def update_profile(
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "Новый пароль должен содержать "
-                    "минимум 12 символов"
+                    "New password must contain at least "
+                    "12 characters"
                 ),
             )
 
@@ -822,7 +822,7 @@ async def update_profile(
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "Новый пароль слишком длинный"
+                    "New password is too long"
                 ),
             )
 
@@ -853,7 +853,7 @@ async def update_profile(
         raise HTTPException(
             status_code=409,
             detail=(
-                "Логин или Email уже заняты"
+                "Username or email is already taken"
             ),
         )
 
@@ -884,8 +884,8 @@ async def update_profile(
         response = JSONResponse(
             {
                 "message": (
-                    "Данные сохранены. "
-                    "Войдите в аккаунт снова."
+                    "Changes saved. "
+                    "Please sign in again."
                 ),
                 "session_invalidated": True,
                 "verification_required": (
@@ -906,7 +906,7 @@ async def update_profile(
         return response
 
     return {
-        "message": "Данные сохранены",
+        "message": "Changes saved",
         "session_invalidated": False,
     }
 

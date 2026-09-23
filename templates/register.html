@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Регистрация | sm1le.fitness</title>
+  <title>Register | sm1le.fitness</title>
   <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
   <link rel="apple-touch-icon" href="/static/favicon.png">
   <link rel="icon" sizes="192x192" href="/static/favicon.png">
-  <style>
+<link rel="apple-touch-icon" href="/static/favicon.png">
+<style>
     :root {
       --bg: #0F172A;
       --card-bg: #1E293B;
@@ -225,7 +226,7 @@
     }
 
     .nav-item.active svg {
-      /* МЫ УБРАЛИ FILL, ОСТАВИЛИ ТОЛЬКО КРАСИВОЕ СВЕЧЕНИЕ */
+      /* Keep only the glow, without fill */
       filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.4));
     }
   </style>
@@ -234,24 +235,24 @@
 <body>
   <a href="/" class="top-logo">sm1le.fitness</a>
   <div class="auth-card">
-    <h2>Создать аккаунт</h2>
-    <p class="subtitle">Начни свой путь к идеальному телу</p>
+    <h2>Create Account</h2>
+    <p class="subtitle">Start your fitness journey</p>
     <div id="message"></div>
     <form id="register-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="form-group">
-        <label>Логин</label>
-        <input type="text" name="username" placeholder="Придумайте логин" required>
+        <label>Username</label>
+        <input type="text" name="username" placeholder="Choose a username" required>
       </div>
       <div class="form-group">
         <label>Email</label>
         <input type="email" name="email" placeholder="example@mail.com" required>
       </div>
       <div class="form-group">
-        <label>Пароль</label>
-        <input type="password" name="password" placeholder="Минимум 6 символов" required>
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Minimum 6 characters" required>
       </div>
-      <button type="submit" class="btn-register">Зарегистрироваться</button>
+      <button type="submit" class="btn-register">Register</button>
     </form>
 
     <button
@@ -260,11 +261,11 @@
       class="resend-button"
       hidden
     >
-      Отправить письмо повторно
+      Resend verification email
     </button>
 
     <div class="footer-text">
-      Уже есть аккаунт? <a href="/auth/login">Войти</a>
+      Already have an account? <a href="/auth/login">Sign In</a>
     </div>
   </div>
   <nav class="bottom-nav">
@@ -273,21 +274,21 @@
         <path
           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
-      <span>Главная</span>
+      <span>Home</span>
     </a>
     <a href="/auth/welcome" class="nav-item">
       <svg viewBox="0 0 24 24">
         <path
           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
       </svg>
-      <span>Планы</span>
+      <span>Plans</span>
     </a>
     <a href="/auth/profile" class="nav-item">
       <svg viewBox="0 0 24 24">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
         <circle cx="12" cy="7" r="4"></circle>
       </svg>
-      <span>Профиль</span>
+      <span>Profile</span>
     </a>
   </nav>
   <script>
@@ -308,7 +309,7 @@
     registerForm.onsubmit = async (e) => {
       e.preventDefault();
 
-      msgEl.innerText = 'Регистрация...';
+      msgEl.innerText = 'Creating account...';
       msgEl.style.color = 'var(--text-muted)';
 
       const formData = new FormData(e.target);
@@ -335,7 +336,7 @@
 
           msgEl.style.color = '#22c55e';
           msgEl.innerText =
-            'Аккаунт создан. Проверьте email и подтвердите адрес.';
+            'Account created. Check your email and verify your address.';
 
           registerForm
             .querySelectorAll('input, button')
@@ -353,13 +354,13 @@
           msgEl.innerText = data.detail[0].msg;
         } else {
           msgEl.innerText =
-            data.detail || 'Ошибка регистрации';
+            data.detail || 'Registration failed';
         }
       } catch (err) {
         console.error(err);
         msgEl.style.color = '#ef4444';
         msgEl.innerText =
-          'Ошибка соединения с сервером';
+          'Failed to connect to the server';
       }
     };
 
@@ -371,7 +372,7 @@
         }
 
         resendButton.disabled = true;
-        resendButton.textContent = 'Отправляем...';
+        resendButton.textContent = 'Sending...';
 
         try {
           const response = await fetch(
@@ -393,7 +394,7 @@
           if (!response.ok) {
             msgEl.style.color = '#ef4444';
             msgEl.textContent =
-              data.detail || 'Не удалось отправить письмо';
+              data.detail || 'Failed to send verification email';
             return;
           }
 
@@ -402,12 +403,12 @@
         } catch (error) {
           console.error(error);
           msgEl.style.color = '#ef4444';
-          msgEl.textContent = 'Ошибка сети';
+          msgEl.textContent = 'Network error';
         } finally {
           setTimeout(() => {
             resendButton.disabled = false;
             resendButton.textContent =
-              'Отправить письмо повторно';
+              'Resend verification email';
           }, 60000);
         }
       }

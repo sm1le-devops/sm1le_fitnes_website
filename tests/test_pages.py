@@ -45,4 +45,4 @@ def test_plan_page_marks_paid_purchase(
     )
 
     assert response.status_code == 200
-    assert "Открыть программу" in response.text
+    assert "Open Program" in response.text

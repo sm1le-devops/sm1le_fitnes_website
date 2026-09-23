@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>sm1le.fitness — Твой путь к лучшей версии себя</title>
+  <title>sm1le.fitness — Your path to a stronger you</title>
   <link rel="icon" type="image/png" href="/static/favicon.png?v=3">
   <link rel="apple-touch-icon" href="/static/favicon.png">
   <link rel="icon" sizes="192x192" href="/static/favicon.png">
-  <style>
+<link rel="apple-touch-icon" href="/static/favicon.png">
+<style>
     :root {
       --bg: #0F172A;
       --card-bg: #1E293B;
@@ -118,14 +119,14 @@
       justify-content: flex-end;
       padding: 24px;
 
-      /* ОРАНЖЕВАЯ ОБВОДКА (Цвет сайта) */
+      /* Orange border (brand color) */
       border: 3px solid var(--accent);
 
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
       background-color: var(--card-bg);
 
-      /* Мягкое оранжевое свечение для некупленных планов */
+      /* Soft orange glow for locked plans */
       box-shadow:
         0 0 15px rgba(249, 115, 22, 0.1),
         0 10px 30px rgba(0, 0, 0, 0.4);
@@ -154,7 +155,7 @@
       content: "";
       position: absolute;
       inset: 0;
-      /* Более сложный градиент: сверху почти прозрачно, снизу плотный темный цвет */
+      /* Gradient: almost transparent at the top, dark at the bottom */
       background: linear-gradient(180deg,
           rgba(15, 23, 42, 0) 0%,
           rgba(15, 23, 42, 0.2) 50%,
@@ -194,15 +195,15 @@
       font-weight: 800;
       z-index: 2;
       display: none;
-      /* По умолчанию скрыто, отображается через .unlocked */
+      /* Hidden by default, displayed through .unlocked */
       align-items: center;
       gap: 6px;
-      /* Расстояние между иконкой и текстом */
+      /* Space between icon and text */
       box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
       text-transform: uppercase;
     }
 
-    /* Это правило у тебя уже есть, убедись, что оно осталось */
+    /* Keep this rule in place */
     .unlocked .unlock-badge {
       display: flex;
     }
@@ -274,7 +275,7 @@
     }
 
     .nav-item.active svg {
-      /* МЫ УБРАЛИ FILL, ОСТАВИЛИ ТОЛЬКО КРАСИВОЕ СВЕЧЕНИЕ */
+      /* Keep only the glow, without fill */
       filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.4));
     }
 
@@ -305,7 +306,7 @@
       background-color: #FFFFFF !important;
       z-index: 1;
       opacity: 0.01;
-      /* Видео почти невидимо до старта */
+      /* Video stays almost invisible before playback */
       transition: opacity 0.4s ease;
     }
 
@@ -315,7 +316,7 @@
       background-color: #FFFFFF;
       z-index: 2;
       opacity: 1;
-      /* Полностью белая шторка */
+      /* Full white curtain */
       transition: opacity 0.4s ease;
       pointer-events: none;
     }
@@ -325,7 +326,7 @@
       background-color: #FFFFFF !important;
     }
 
-    /* Класс для блокировки прокрутки основной страницы, пока идет видео */
+    /* Prevent page scrolling while the intro video is playing */
     body.no-scroll {
       overflow: hidden;
     }
@@ -336,7 +337,7 @@
   <div id="video-splash">
     <video id="welcome-video" autoplay muted playsinline webkit-playsinline preload="auto">
       <source src="/static/welcome.MP4" type="video/mp4">
-      Ваш браузер не поддерживает видео.
+      Your browser does not support video.
     </video>
 
     <div id="video-curtain"></div>
@@ -368,11 +369,11 @@
     </header>
 
     <div class="greeting">
-      <h1>{% if user %}Привет, {{ user.username }}!{% else %}Начни меняться!{% endif %}</h1>
-      <p>{% if user %}Твой прогресс под контролем.{% else %}Выберите программу тренировок{% endif %}</p>
+      <h1>{% if user %}Hi, {{ user.username }}!{% else %}Start your transformation!{% endif %}</h1>
+      <p>{% if user %}Your progress is under control.{% else %}Choose a workout program{% endif %}</p>
     </div>
 
-    <h2 class="section-title">🔥 Популярные планы</h2>
+    <h2 class="section-title">🔥 Popular Plans</h2>
 
     {% if plans %}
     {% for plan_id, plan in plans.items() %}
@@ -382,22 +383,22 @@
       style="background-image: url('{{ plan.image }}');" onclick="selectPlan('{{ plan_id }}')">
 
       <div class="unlock-badge">
-        <span>Куплено</span>
+        <span>Purchased</span>
       </div>
 
-      {# Показываем цену, только если план не куплен #}
+      {# Show the price only if the plan has not been purchased #}
       {% if not is_unlocked %}
       <div class="price-tag">{{ plan.price }} ₽</div>
       {% endif %}
 
       <div class="plan-info">
         <h3>{{ plan.title }}</h3>
-        <p>{{ plan.duration }} • {{ plan.intensity }} • Дом/Зал</p>
+        <p>{{ plan.duration }} • {{ plan.intensity }} • Home / Gym</p>
       </div>
     </div>
     {% endfor %}
     {% else %}
-    <p style="color: var(--text-muted); text-align: center;">Загрузка планов...</p>
+    <p style="color: var(--text-muted); text-align: center;">Loading plans...</p>
     {% endif %}
 
     <div class="footer-text">sm1le.fitness s.r.o • 2026</div>
@@ -409,21 +410,21 @@
         <path
           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
-      <span>Главная</span>
+      <span>Home</span>
     </a>
     <a href="/auth/welcome" class="nav-item">
       <svg viewBox="0 0 24 24">
         <path
           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
       </svg>
-      <span>Планы</span>
+      <span>Plans</span>
     </a>
     <a href="/auth/profile" class="nav-item">
       <svg viewBox="0 0 24 24">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
         <circle cx="12" cy="7" r="4"></circle>
       </svg>
-      <span>Профиль</span>
+      <span>Profile</span>
     </a>
   </nav>
 
@@ -435,22 +436,22 @@
     const video = document.getElementById('welcome-video');
     const curtain = document.getElementById('video-curtain');
 
-    // КЛЮЧЕВАЯ ПРОВЕРКА: Видел ли пользователь видео в этой сессии?
+    // KEY CHECK: Has the user already seen the video in this session?
     const hasSeenSplash = sessionStorage.getItem('splashShown');
 
     if (!hasSeenSplash) {
-      // Если НЕ видел: показываем заставку и блокируем скролл
+      // If not: show the splash screen and disable scrolling
       splash.style.display = 'flex';
       document.body.classList.add('no-scroll');
 
-      // Помечаем, что при следующей загрузке видео показывать не надо
+      // Mark the video as viewed for the rest of the session
       sessionStorage.setItem('splashShown', 'true');
     } else {
-      // Если УЖЕ видел: просто выходим из функции показа, заставка останется display: none
-      console.log("Видео уже просмотрено в этой сессии. Пропускаем.");
+      // If already viewed: skip the splash screen
+      console.log("Intro video already viewed in this session. Skipping.");
     }
 
-    // --- Логика работы видео (сработает только если splash отображен) ---
+    // --- Video logic (runs only when the splash screen is visible) ---
 
     function showVideo() {
       video.style.opacity = '1';
@@ -471,7 +472,7 @@
       video.onended = closeSplash;
       video.onerror = closeSplash;
 
-      // Fallback таймер (увеличил до 3 секунд на всякий случай)
+      // Fallback timer (3 seconds)
       setTimeout(() => {
         if (getComputedStyle(curtain).opacity !== '0') {
           closeSplash();
@@ -486,7 +487,7 @@
       });
     }
 
-    // Твоя логика выбора плана (без изменений)
+    // Plan selection logic
     function selectPlan(planId) {
       if (window.navigator.vibrate) window.navigator.vibrate(10);
       const isAuthorized = document.getElementById('auth-data').getAttribute('data-is-authorized') === 'true';

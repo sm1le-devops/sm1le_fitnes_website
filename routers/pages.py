@@ -97,7 +97,7 @@ async def get_plan_page(
     if not plan:
         raise HTTPException(
             status_code=404,
-            detail="План не найден",
+            detail="Plan not found",
         )
 
     is_purchased = False

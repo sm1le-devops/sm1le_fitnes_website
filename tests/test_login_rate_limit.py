@@ -97,8 +97,7 @@ def test_login_returns_429_when_redis_guard_is_already_blocked(
         == "77"
     )
     assert response.json()["detail"] == (
-        "Слишком много попыток входа. "
-        "Попробуйте позже."
+        "Too many login attempts. Please try again later."
     )
 
 
