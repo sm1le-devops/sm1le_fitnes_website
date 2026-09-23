@@ -34,6 +34,7 @@ psycopg2-binary = "2.9.10"
 fpdf2 = "2.7.8"
 aiosmtplib = "5.1.3"
 google-genai = "^1.73.1"
+resend = {extras = ["async"], version = "^2.47.0"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.1.1"

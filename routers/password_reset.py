@@ -12,11 +12,7 @@ from fastapi import (
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi_limiter.depends import RateLimiter
-from fastapi_mail import (
-    ConnectionConfig,
-    FastMail,
-    MessageSchema,
-)
+from services.email_service import send_email
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -34,18 +30,6 @@ templates = Jinja2Templates(directory="templates")
 
 RESET_TOKEN_TTL = 60 * 60
 RESET_COOLDOWN_TTL = 60 * 10
-
-
-conf = ConnectionConfig(
-    MAIL_USERNAME=settings.mail_user,
-    MAIL_PASSWORD=settings.mail_password,
-    MAIL_FROM=settings.mail_from,
-    MAIL_PORT=settings.mail_port,
-    MAIL_SERVER=settings.mail_server,
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
-    USE_CREDENTIALS=True,
-)
 
 
 def token_hash(token: str) -> str:
@@ -210,20 +194,15 @@ async def forgot_password(
         f"/auth/reset-password?token={token}"
     )
 
-    message = MessageSchema(
-        subject="Password recovery",
-        recipients=[user.email],
-        body=(
+    background_tasks.add_task(
+        send_email,
+        user.email,
+        "Password recovery",
+        (
             "To reset your password, "
             "follow this link:\n"
             f"{reset_link}"
         ),
-        subtype="plain",
-    )
-
-    background_tasks.add_task(
-        FastMail(conf).send_message,
-        message,
     )
 
     return generic_response

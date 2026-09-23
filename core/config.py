@@ -17,9 +17,14 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
 
     # Mail
+    # Mail
+    resend_api_key: str = ""
+    mail_from: str = ""
+
+    # Legacy SMTP settings.
+    # Remove after migration is fully verified.
     mail_user: str = ""
     mail_password: str = ""
-    mail_from: str = ""
     mail_server: str = "smtp.gmail.com"
     mail_port: int = 587
 
