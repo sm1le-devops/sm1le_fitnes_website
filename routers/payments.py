@@ -270,7 +270,7 @@ async def create_checkout_session(
             line_items=[
                 {
                     "price_data": {
-                        "currency": "rub",
+                        "currency": "usd",
                         "product_data": {
                             "name": plan["title"],
                         },

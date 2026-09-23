@@ -190,7 +190,7 @@
         {% else %}
         <button id="checkout-button" class="buy-button">
             <span>Start Program</span>
-            <span class="price-label">{{ plan.price }} ₽</span>
+            <span class="price-label">${{ plan.price }}</span>
         </button>
         {% endif %}
     </div>
@@ -233,7 +233,7 @@
                     } else {
                         alert('Error: ' + (session.detail || 'Failed to create checkout session'));
                         checkoutButton.disabled = false;
-                        checkoutButton.innerHTML = '<span>Start Program</span><span class="price-label">{{ plan.price }} ₽</span>';
+                        checkoutButton.innerHTML = '<span>Start Program</span><span class="price-label">${{ plan.price }}</span>';
                     }
                 } catch (err) {
                     alert('Network error');

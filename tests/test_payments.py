@@ -228,7 +228,7 @@ def test_checkout_sends_correct_stripe_metadata(
     assert (
         captured["line_items"][0]
         ["price_data"]["currency"]
-        == "rub"
+        == "usd"
     )
     assert "plan_id=" not in captured["success_url"]
     assert (

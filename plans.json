@@ -3,18 +3,18 @@
     "title": "Intensive Weight Loss",
     "duration": "4 weeks",
     "intensity": "High",
-    "price": "2600",
+    "price": "29",
     "image": "/static/uploads/photo2.png",
-    "description": "A personalized fat-loss plan created by AI based on your individual parameters.",
-    "full_info": "After payment, you will complete a detailed questionnaire. Our AI will analyze your experience, available equipment, and injuries to create the most effective personalized plan."
+    "description": "A personalized fat-loss plan tailored to your goals and training profile.",
+    "full_info": "After purchase, you will complete a detailed questionnaire. The system analyzes your experience, available equipment and limitations to generate a personalized training and nutrition plan."
   },
   "muscle_gain": {
     "title": "Muscle Gain: PRO",
     "duration": "8 weeks",
     "intensity": "Maximum",
-    "price": "2900",
+    "price": "39",
     "image": "/static/uploads/photo1.png",
-    "description": "A science-based approach to muscle growth tailored to your individual characteristics.",
-    "full_info": "The program includes personalized calorie and macronutrient targets together with a training plan adapted to your experience level."
+    "description": "A personalized muscle-building program based on your training experience and goals.",
+    "full_info": "The program includes personalized nutrition targets and a training plan adapted to your experience and available equipment."
   }
 }

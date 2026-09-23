@@ -388,7 +388,7 @@
 
       {# Show the price only if the plan has not been purchased #}
       {% if not is_unlocked %}
-      <div class="price-tag">{{ plan.price }} ₽</div>
+      <div class="price-tag">${{ plan.price }}</div>
       {% endif %}
 
       <div class="plan-info">
