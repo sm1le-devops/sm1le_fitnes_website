@@ -9,9 +9,9 @@ from fastapi import (
     HTTPException,
     Request,
 )
+
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from fastapi_limiter.depends import RateLimiter
 from services.email_service import send_email
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -31,7 +31,56 @@ templates = Jinja2Templates(directory="templates")
 RESET_TOKEN_TTL = 60 * 60
 RESET_COOLDOWN_TTL = 60 * 10
 
+FORGOT_PASSWORD_LIMIT = 3
+FORGOT_PASSWORD_WINDOW = 60 * 60
 
+
+def token_hash(token: str) -> str:
+    return sha256(
+        token.encode("utf-8")
+    ).hexdigest()
+
+
+def forgot_password_limit_key(client_ip: str) -> str:
+    normalized_ip = client_ip.strip() or "unknown"
+
+    return (
+        "password_reset:rate_limit:"
+        f"{sha256(normalized_ip.encode('utf-8')).hexdigest()}"
+    )
+
+
+async def consume_forgot_password_attempt(
+    redis,
+    client_ip: str,
+) -> tuple[bool, int]:
+    key = forgot_password_limit_key(client_ip)
+
+    created = await redis.set(
+        key,
+        "1",
+        ex=FORGOT_PASSWORD_WINDOW,
+        nx=True,
+    )
+
+    if created:
+        return True, FORGOT_PASSWORD_WINDOW
+
+    count = await redis.incr(key)
+
+    ttl = await redis.ttl(key)
+
+    if ttl is None or ttl < 0:
+        await redis.expire(
+            key,
+            FORGOT_PASSWORD_WINDOW,
+        )
+        ttl = FORGOT_PASSWORD_WINDOW
+
+    return (
+        count <= FORGOT_PASSWORD_LIMIT,
+        max(int(ttl), 1),
+    )
 def token_hash(token: str) -> str:
     return sha256(
         token.encode("utf-8")
@@ -109,23 +158,37 @@ async def reset_password_form(
     )
 
 
-@router.post(
-    "/forgot-password",
-    dependencies=[
-        Depends(
-            RateLimiter(
-                times=3,
-                seconds=3600,
-            )
-        )
-    ],
-)
+@router.post("/forgot-password")
 async def forgot_password(
     request: Request,
     request_data: schemas.ForgotPasswordRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
+    redis = request.app.state.redis
+
+    client_ip = (
+        request.client.host
+        if request.client
+        else "unknown"
+    )
+
+    allowed, retry_after = (
+        await consume_forgot_password_attempt(
+            redis,
+            client_ip,
+        )
+    )
+
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many password reset requests. Try again later.",
+            headers={
+                "Retry-After": str(retry_after)
+            },
+        )
+
     email = str(
         request_data.email
     ).strip().lower()
@@ -147,8 +210,6 @@ async def forgot_password(
 
     if not user:
         return generic_response
-
-    redis = request.app.state.redis
 
     cooldown_created = await redis.set(
         reset_cooldown_key(user.id),
