@@ -81,10 +81,6 @@ async def consume_forgot_password_attempt(
         count <= FORGOT_PASSWORD_LIMIT,
         max(int(ttl), 1),
     )
-def token_hash(token: str) -> str:
-    return sha256(
-        token.encode("utf-8")
-    ).hexdigest()
 
 
 def reset_token_key(token: str) -> str:
