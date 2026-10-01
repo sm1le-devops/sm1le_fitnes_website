@@ -134,6 +134,7 @@ class FakeRedis:
 
     def __init__(self):
         self.data = {}
+        self.ttls = {}
 
     async def ping(self):
         return True
@@ -142,9 +143,7 @@ class FakeRedis:
         return None
 
     async def get(self, key):
-        return self.data.get(
-            str(key)
-        )
+        return self.data.get(str(key))
 
     async def set(
         self,
@@ -160,12 +159,36 @@ class FakeRedis:
 
         self.data[key] = str(value)
 
+        if ex is not None:
+            self.ttls[key] = int(ex)
+
         return True
 
-    async def delete(
-        self,
-        *keys,
-    ):
+    async def incr(self, key):
+        key = str(key)
+        current = self.data.get(key)
+        value = 1 if current is None else int(current) + 1
+        self.data[key] = str(value)
+        return value
+
+    async def ttl(self, key):
+        key = str(key)
+
+        if key not in self.data:
+            return -2
+
+        return self.ttls.get(key, -1)
+
+    async def expire(self, key, seconds):
+        key = str(key)
+
+        if key not in self.data:
+            return False
+
+        self.ttls[key] = int(seconds)
+        return True
+
+    async def delete(self, *keys):
         deleted = 0
 
         for key in keys:
@@ -173,33 +196,24 @@ class FakeRedis:
 
             if key in self.data:
                 deleted += 1
-                del self.data[key]
+
+            self.data.pop(key, None)
+            self.ttls.pop(key, None)
 
         return deleted
 
-    async def getdel(
-        self,
-        key,
-    ):
-        return self.data.pop(
-            str(key),
-            None,
-        )
+    async def getdel(self, key):
+        key = str(key)
+        self.ttls.pop(key, None)
+        return self.data.pop(key, None)
 
-    async def exists(
-        self,
-        key,
-    ):
-        return int(
-            str(key) in self.data
-        )
+    async def exists(self, key):
+        return int(str(key) in self.data)
 
     async def flushall(self):
         self.data.clear()
-
+        self.ttls.clear()
         return True
-
-
 @pytest.fixture(autouse=True)
 def bypass_rate_limiter(
     monkeypatch,

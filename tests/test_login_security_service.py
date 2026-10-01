@@ -19,7 +19,7 @@ class FakeRedis:
         self.ttls = {}
 
     async def get(self, key):
-        return self.values.get(key)
+        return self.values.get(str(key))
 
     async def set(
         self,
@@ -28,6 +28,8 @@ class FakeRedis:
         ex=None,
         nx=False,
     ):
+        key = str(key)
+
         if nx and key in self.values:
             return False
 
@@ -39,54 +41,55 @@ class FakeRedis:
         return True
 
     async def incr(self, key):
-        value = int(
-            self.values.get(key, "0")
-        ) + 1
-
+        key = str(key)
+        current = self.values.get(key)
+        value = 1 if current is None else int(current) + 1
         self.values[key] = str(value)
-
         return value
 
-    async def expire(
-        self,
-        key,
-        seconds,
-    ):
+    async def ttl(self, key):
+        key = str(key)
+
+        if key not in self.values:
+            return -2
+
+        return self.ttls.get(key, -1)
+
+    async def expire(self, key, seconds):
+        key = str(key)
+
         if key not in self.values:
             return False
 
         self.ttls[key] = int(seconds)
-
         return True
-
-    async def ttl(self, key):
-        if key not in self.values:
-            return -2
-
-        return self.ttls.get(
-            key,
-            -1,
-        )
 
     async def delete(self, *keys):
         deleted = 0
 
         for key in keys:
+            key = str(key)
+
             if key in self.values:
                 deleted += 1
 
-            self.values.pop(
-                key,
-                None,
-            )
-            self.ttls.pop(
-                key,
-                None,
-            )
+            self.values.pop(key, None)
+            self.ttls.pop(key, None)
 
         return deleted
 
+    async def getdel(self, key):
+        key = str(key)
+        self.ttls.pop(key, None)
+        return self.values.pop(key, None)
 
+    async def exists(self, key):
+        return int(str(key) in self.values)
+
+    async def flushall(self):
+        self.values.clear()
+        self.ttls.clear()
+        return True
 @pytest.mark.anyio
 async def test_first_failed_login_sets_user_and_ip_ttl():
     redis = FakeRedis()
