@@ -4,7 +4,7 @@
 
 Users can register, verify email, manage a profile, purchase a plan through Stripe, and receive personalized training content.
 
-**Live:** https://sm1le-fitnes-website-pojo.onrender.com
+**Live:** https://sm1le-fitnes-website-a3kp.onrender.com
 
 ## Stack
 
