@@ -129,7 +129,7 @@ jobs:
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
 
     env:
-      PRODUCTION_URL: https://sm1le-fitnes-website-pojo.onrender.com
+      PRODUCTION_URL: https://sm1le-fitnes-website-a3kp.onrender.com
 
     steps:
       - name: Trigger exact commit on Render
